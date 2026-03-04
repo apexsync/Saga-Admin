@@ -14,6 +14,9 @@ export default function Dashboard({ onEdit, onAddNew, showToast }) {
   const [replyingTo, setReplyingTo] = useState(null);
   const [replyText, setReplyText] = useState('');
   const [savingReply, setSavingReply] = useState(false);
+  
+  // Product Detail states
+  const [viewingProduct, setViewingProduct] = useState(null);
 
   const loadProducts = async () => {
     setLoading(true);
@@ -198,6 +201,13 @@ export default function Dashboard({ onEdit, onAddNew, showToast }) {
                   </td>
                   <td>
                     <div className="actions-cell">
+                      <button className="btn btn-ghost btn-small" title="View Details" onClick={() => setViewingProduct(product)}>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: 16, height: 16 }}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                        </svg>
+                        View
+                      </button>
                       <button className="btn btn-ghost btn-small" title="View Reviews" onClick={() => loadProductReviews(product)}>
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: 16, height: 16 }}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" />
@@ -224,6 +234,92 @@ export default function Dashboard({ onEdit, onAddNew, showToast }) {
           </table>
         )}
       </div>
+
+      {/* Product Details Modal */}
+      {viewingProduct && (
+        <div className="modal-overlay" onClick={() => setViewingProduct(null)}>
+          <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 900 }}>
+            <div className="modal-header">
+              <h2 className="modal-title">{viewingProduct.name}</h2>
+              <button className="modal-close" onClick={() => setViewingProduct(null)}>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: 24, height: 24 }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32 }}>
+              {/* Left: Media */}
+              <div>
+                <div style={{ marginBottom: 20 }}>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600, display: 'block', marginBottom: 8 }}>COVER IMAGE</span>
+                  <img src={viewingProduct.imageUrl} alt={viewingProduct.name} style={{ width: '100%', borderRadius: 12, aspectRatio: '1/1', objectFit: 'cover', border: '1px solid var(--border)' }} />
+                </div>
+
+                {viewingProduct.media && viewingProduct.media.length > 0 && (
+                  <div>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600, display: 'block', marginBottom: 8 }}>ADDITIONAL MEDIA</span>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+                      {viewingProduct.media.map((item, idx) => (
+                        <div key={idx} style={{ position: 'relative', borderRadius: 8, overflow: 'hidden', aspectRatio: '1/1', border: '1px solid var(--border)', background: 'var(--bg-card)' }}>
+                          {item.type === 'video' ? (
+                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#000' }}>
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style={{ width: 24, height: 24, color: '#fff' }}>
+                                  <path fillRule="evenodd" d="M4.5 5.653c0-1.427 1.529-2.33 2.779-1.643l11.54 6.347c1.295.712 1.295 2.573 0 3.286L7.28 19.99c-1.25.687-2.779-.217-2.779-1.643V5.653Z" clipRule="evenodd" />
+                                </svg>
+                            </div>
+                          ) : (
+                            <img src={item.url} alt={`Media ${idx}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Right: Info */}
+              <div>
+                <div style={{ marginBottom: 24 }}>
+                   <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--primary)', marginBottom: 4 }}>₹{Number(viewingProduct.price).toLocaleString()}</div>
+                   <span className="category-badge">{viewingProduct.category}</span>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
+                    {[
+                      { label: 'Material', value: viewingProduct.material },
+                      { label: 'Purity', value: viewingProduct.purity },
+                      { label: 'Weight', value: viewingProduct.weight },
+                      { label: 'Color', value: viewingProduct.metalColor },
+                      { label: 'Stock', value: viewingProduct.stock, highlight: viewingProduct.stock < 5 },
+                      { label: 'Gemstones', value: viewingProduct.gemstones },
+                      { label: 'Sizes', value: viewingProduct.sizes },
+                    ].map(spec => (
+                      <div key={spec.label} style={{ padding: 12, background: 'var(--bg-input)', borderRadius: 8 }}>
+                         <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: 2 }}>{spec.label.toUpperCase()}</div>
+                         <div style={{ fontSize: '0.9rem', fontWeight: 600, color: spec.highlight ? 'var(--danger)' : 'inherit' }}>{spec.value || 'N/A'}</div>
+                      </div>
+                    ))}
+                </div>
+
+                <div style={{ marginBottom: 24 }}>
+                   <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600, display: 'block', marginBottom: 8 }}>DESCRIPTION</span>
+                   <p style={{ fontSize: '0.9rem', lineHeight: 1.6, color: 'var(--text-secondary)', whiteSpace: 'pre-line' }}>
+                      {viewingProduct.description || 'No description provided.'}
+                   </p>
+                </div>
+
+                <div style={{ display: 'flex', gap: 12, marginTop: 'auto' }}>
+                  <button className="btn btn-primary" onClick={() => { onEdit(viewingProduct); setViewingProduct(null); }} style={{ flex: 1 }}>
+                    Edit Product
+                  </button>
+                  <button className="btn btn-ghost" onClick={() => setViewingProduct(null)}>Close</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Product Reviews Modal */}
       {viewingReviewsFor && (

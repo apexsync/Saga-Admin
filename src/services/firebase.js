@@ -1,11 +1,7 @@
-/**
- * Firebase Configuration for Admin App
- * Same Firebase project as the Saga store app
- */
-
 import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
+import { getAnalytics, isSupported } from 'firebase/analytics';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -19,7 +15,10 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 
+// Initialize Analytics conditionally (safest for production)
+export const analytics = await isSupported() ? getAnalytics(app) : null;
 export const db = getFirestore(app);
 export const auth = getAuth(app);
 
 export default app;
+
