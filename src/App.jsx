@@ -1,5 +1,13 @@
+import { useState, useEffect } from 'react';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { auth } from './services/firebase';
+import Dashboard from './pages/Dashboard';
+import AddProduct from './pages/AddProduct';
+import Login from './pages/Login';
+import ReviewsManager from './pages/ReviewsManager';
+import OrdersManager from './pages/OrdersManager';
+import './App.css';
+
 
 function App() {
   const [user, setUser] = useState(null);
