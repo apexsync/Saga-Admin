@@ -1,15 +1,9 @@
-import { useState } from 'react';
-import Dashboard from './pages/Dashboard';
-import AddProduct from './pages/AddProduct';
-import Login from './pages/Login';
-import ReviewsManager from './pages/ReviewsManager';
-import OrdersManager from './pages/OrdersManager';
-import './App.css';
-
-const ADMIN_PASSWORD = 'saga2024'; // Simple hardcoded admin check — can be improved
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { auth } from './services/firebase';
 
 function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [editProduct, setEditProduct] = useState(null);
   const [toast, setToast] = useState(null);
@@ -19,17 +13,21 @@ function App() {
     setTimeout(() => setToast(null), 3000);
   };
 
-  const handleLogin = (password) => {
-    if (password === ADMIN_PASSWORD) {
-      setIsLoggedIn(true);
-      return true;
-    }
-    return false;
-  };
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUser(user);
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
 
-  const handleLogout = () => {
-    setIsLoggedIn(false);
-    setCurrentPage('dashboard');
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      setCurrentPage('dashboard');
+    } catch (err) {
+      showToast('Error logging out', 'error');
+    }
   };
 
   const handleEditProduct = (product) => {
@@ -43,8 +41,16 @@ function App() {
     showToast('Product saved successfully!');
   };
 
-  if (!isLoggedIn) {
-    return <Login onLogin={handleLogin} />;
+  if (loading) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-dark)' }}>
+        <p style={{ color: 'var(--primary)', fontWeight: 600 }}>Loading Saga Admin...</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Login showToast={showToast} />;
   }
 
   return (
