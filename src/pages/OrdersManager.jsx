@@ -48,10 +48,15 @@ export default function OrdersManager({ showToast }) {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'Processing': return 'var(--warning)';
-      case 'Shipped': return '#3b82f6';
-      case 'Delivered': return 'var(--success)';
-      case 'Cancelled': return 'var(--danger)';
+      case 'Processing': return '#a8a29e'; // Stone
+      case 'Confirmed': return '#0ea5e9'; // Sky
+      case 'Packed': return '#8b5cf6'; // Violet
+      case 'Shipped': return '#3b82f6'; // Blue
+      case 'Out for Delivery': return '#f59e0b'; // Amber
+      case 'Delivered': return 'var(--success)'; // Green
+      case 'Cancelled': return 'var(--danger)'; // Red
+      case 'Returned': return '#ec4899'; // Pink
+      case 'Refunded': return '#64748b'; // Slate
       default: return 'var(--text-muted)';
     }
   };
@@ -71,8 +76,12 @@ export default function OrdersManager({ showToast }) {
     if (!phone) return '#';
     
     let message = '';
-    if (type === 'tracking') {
-      message = `Hi ${order.customerName || 'there'}, your Saga Order #${order.id.slice(-6).toUpperCase()} has been shipped! 🚢\n\nTracking ID: ${order.trackingId}\nCourier: ${order.courier || 'DTDC'}\n\nYou can track it here: ${getDTDCTrackingUrl(order.trackingId)}\n\nThank you for shopping with Saga!`;
+    if (type === 'tracking' || order.status === 'Shipped' || order.status === 'Out for Delivery') {
+      message = `Hi ${order.customerName || 'there'}, your Saga Order #${order.id.slice(-6).toUpperCase()} is ${order.status.toLowerCase()}! 🚢\n\nTracking ID: ${order.trackingId}\nCourier: ${order.courier || 'DTDC'}\n\nYou can track it here: ${getDTDCTrackingUrl(order.trackingId)}\n\nThank you for shopping with Saga!`;
+    } else if (order.status === 'Confirmed') {
+      message = `Hi ${order.customerName || 'there'}, your Saga Order #${order.id.slice(-6).toUpperCase()} has been confirmed and is being prepared! ✨`;
+    } else if (order.status === 'Packed') {
+      message = `Hi ${order.customerName || 'there'}, your Saga Order #${order.id.slice(-6).toUpperCase()} is packed and ready for dispatch! 📦`;
     } else {
       message = `Hi ${order.customerName || 'there'}, I'm reaching out regarding your Saga Order #${order.id.slice(-6).toUpperCase()}. Current status: ${order.status}.`;
     }
@@ -280,6 +289,17 @@ export default function OrdersManager({ showToast }) {
               <h4 style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase', marginBottom: 16 }}>Update Status</h4>
               
               {selectedOrder.status === 'Processing' && (
+                <div style={{ display: 'flex', gap: 12 }}>
+                  <button className="btn btn-primary" style={{ flex: 1 }} onClick={() => handleUpdateStatus(selectedOrder.id, 'Confirmed')}>Confirm Order</button>
+                  <button className="btn btn-danger" onClick={() => handleUpdateStatus(selectedOrder.id, 'Cancelled')}>Cancel</button>
+                </div>
+              )}
+
+              {selectedOrder.status === 'Confirmed' && (
+                <button className="btn btn-primary" style={{ width: '100%' }} onClick={() => handleUpdateStatus(selectedOrder.id, 'Packed')}>Mark as Packed</button>
+              )}
+
+              {selectedOrder.status === 'Packed' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                   <div className="form-group">
                     <label className="form-label">DTDC Tracking ID</label>
@@ -291,47 +311,23 @@ export default function OrdersManager({ showToast }) {
                       onChange={(e) => setTrackingId(e.target.value)}
                     />
                   </div>
-                  <div style={{ display: 'flex', gap: 12 }}>
-                    <button 
-                      className="btn btn-primary" 
-                      style={{ flex: 1 }}
-                      disabled={updating}
-                      onClick={() => handleUpdateStatus(selectedOrder.id, 'Shipped')}
-                    >
-                      {updating ? 'Updating...' : 'Mark as Shipped'}
-                    </button>
-                    <button 
-                      className="btn btn-danger" 
-                      disabled={updating}
-                      onClick={() => handleUpdateStatus(selectedOrder.id, 'Cancelled')}
-                    >
-                      Cancel Order
-                    </button>
-                  </div>
+                  <button className="btn btn-primary" style={{ width: '100%' }} onClick={() => handleUpdateStatus(selectedOrder.id, 'Shipped')}>Ship Order</button>
                 </div>
               )}
 
               {selectedOrder.status === 'Shipped' && (
-                <button 
-                  className="btn btn-primary" 
-                  style={{ width: '100%' }}
-                  disabled={updating}
-                  onClick={() => handleUpdateStatus(selectedOrder.id, 'Delivered')}
-                >
-                  {updating ? 'Updating...' : 'Mark as Delivered'}
-                </button>
+                <button className="btn btn-primary" style={{ width: '100%' }} onClick={() => handleUpdateStatus(selectedOrder.id, 'Out for Delivery')}>Mark Out for Delivery</button>
               )}
 
-              {selectedOrder.status === 'Delivered' && (
-                <p style={{ textAlign: 'center', color: 'var(--success)', fontSize: '0.875rem' }}>
-                  ✓ This order has been successfully delivered.
-                </p>
+              {selectedOrder.status === 'Out for Delivery' && (
+                <button className="btn btn-primary" style={{ width: '100%' }} onClick={() => handleUpdateStatus(selectedOrder.id, 'Delivered')}>Mark as Delivered</button>
               )}
 
-              {selectedOrder.status === 'Cancelled' && (
-                <p style={{ textAlign: 'center', color: 'var(--danger)', fontSize: '0.875rem' }}>
-                  ✕ This order was cancelled.
-                </p>
+              {(selectedOrder.status === 'Delivered' || selectedOrder.status === 'Cancelled') && (
+                <div style={{ display: 'flex', gap: 12 }}>
+                  <button className="btn btn-ghost" style={{ flex: 1 }} onClick={() => handleUpdateStatus(selectedOrder.id, 'Returned')}>Mark as Returned</button>
+                  <button className="btn btn-ghost" style={{ flex: 1 }} onClick={() => handleUpdateStatus(selectedOrder.id, 'Refunded')}>Mark as Refunded</button>
+                </div>
               )}
             </div>
           </div>
