@@ -183,99 +183,115 @@ export default function OrdersManager({ showToast }) {
         <div className="modal-overlay" onClick={() => setSelectedOrder(null)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <h2 className="modal-title">Order #{selectedOrder.id.slice(-6).toUpperCase()}</h2>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: 'var(--text-muted)' }}>Full ID: {selectedOrder.id}</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <h2 className="modal-title" style={{ fontSize: '1.5rem' }}>
+                  Order <span style={{ color: 'var(--primary)' }}>#{selectedOrder.id.slice(-6).toUpperCase()}</span>
+                </h2>
+                <div className="id-chip">
+                  <span style={{ fontSize: '0.7rem', fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
+                    Full ID: {selectedOrder.id}
+                  </span>
                   <button 
                     onClick={() => { navigator.clipboard.writeText(selectedOrder.id); showToast('Order ID copied!'); }}
-                    style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontSize: '0.75rem' }}
+                    style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontSize: '0.7rem', fontWeight: 700 }}
                   >
                     Copy
                   </button>
                 </div>
               </div>
               <button className="modal-close" onClick={() => setSelectedOrder(null)}>
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: 24, height: 24 }}>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 22, height: 22 }}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 32 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 32, marginBottom: 40 }}>
               <div>
-                <h4 style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase', marginBottom: 12 }}>Customer Details</h4>
-                <p style={{ fontWeight: 600 }}>{selectedOrder.customerName || 'Customer'}</p>
-                <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginTop: 4 }}>
+                <span className="section-label">Customer Details</span>
+                <p style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 4 }}>{selectedOrder.customerName || 'Customer'}</p>
+                <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: 12 }}>
                   {selectedOrder.customerEmail}
                 </p>
-                <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginTop: 4 }}>
-                  {selectedOrder.address?.street},<br />
-                  {selectedOrder.address?.city} - {selectedOrder.address?.zip}
-                </p>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 12 }}>
-                  <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', margin: 0 }}>
-                    📞 {selectedOrder.address?.phone}
+                
+                <div style={{ 
+                  background: 'rgba(255,255,255,0.03)', padding: '16px', borderRadius: '16px', 
+                  border: '1px solid rgba(255,255,255,0.05)', marginBottom: 20 
+                }}>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                    {selectedOrder.address?.street},<br />
+                    <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                      {selectedOrder.address?.city} - {selectedOrder.address?.zip}
+                    </span>
                   </p>
+                </div>
+
+                <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12 }}>
+                  <div style={{ 
+                    display: 'flex', alignItems: 'center', gap: 8, 
+                    background: 'rgba(255,255,255,0.05)', padding: '10px 14px', borderRadius: '12px',
+                    fontSize: '0.85rem', color: 'var(--text-primary)', fontWeight: 600
+                  }}>
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" width="16" height="16" strokeWidth="2.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                    </svg>
+                    {selectedOrder.address?.phone}
+                  </div>
+
                   {selectedOrder.address?.phone && (
                     <a 
                       href={getWhatsAppUrl(selectedOrder)} 
                       target="_blank" 
                       rel="noreferrer"
-                      style={{ 
-                        display: 'inline-flex', alignItems: 'center', gap: 6, 
-                        background: '#25D366', color: 'white', padding: '4px 10px', 
-                        borderRadius: 4, textDecoration: 'none', fontSize: '0.75rem', fontWeight: 600 
-                      }}
+                      className="whatsapp-btn"
                     >
-                      <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                      <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
                         <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/>
                       </svg>
-                      Reply on WhatsApp
+                      Reply
                     </a>
                   )}
                 </div>
               </div>
+
               <div>
-                <h4 style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase', marginBottom: 12 }}>Order Status</h4>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+                <span className="section-label">Order Status</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+                  <span className="status-indicator pulse-animation" style={{ background: getStatusColor(selectedOrder.status) }}></span>
                   <span className="category-badge" style={{ 
-                    background: `${getStatusColor(selectedOrder.status)}20`, 
+                    background: `${getStatusColor(selectedOrder.status)}15`, 
                     color: getStatusColor(selectedOrder.status),
-                    borderColor: `${getStatusColor(selectedOrder.status)}40`
+                    borderColor: `${getStatusColor(selectedOrder.status)}30`,
+                    fontSize: '0.85rem', padding: '6px 16px'
                   }}>
                     {selectedOrder.status}
                   </span>
                 </div>
                 
                 {selectedOrder.trackingId && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                    <div style={{ background: 'rgba(255,255,255,0.03)', padding: 12, borderRadius: 8, border: '1px solid var(--border)' }}>
-                      <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 4 }}>DTDC Tracking ID:</p>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <code style={{ color: 'var(--primary)', fontWeight: 600 }}>{selectedOrder.trackingId}</code>
-                        <a 
-                          href={getDTDCTrackingUrl(selectedOrder.trackingId)} 
-                          target="_blank" 
-                          rel="noreferrer"
-                          style={{ fontSize: '0.75rem', color: '#3b82f6', textDecoration: 'none' }}
-                        >
-                          Track ↗
-                        </a>
-                      </div>
+                  <div className="tracking-card">
+                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 8, fontWeight: 600 }}>DTDC TRACKING ID</p>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                      <code style={{ color: 'var(--primary)', fontWeight: 800, fontSize: '1.1rem' }}>{selectedOrder.trackingId}</code>
+                      <a 
+                        href={getDTDCTrackingUrl(selectedOrder.trackingId)} 
+                        target="_blank" 
+                        rel="noreferrer"
+                        className="btn btn-ghost btn-small"
+                        style={{ padding: '4px 10px', borderRadius: '8px' }}
+                      >
+                        Track ↗
+                      </a>
                     </div>
                     
                     <a 
                       href={getWhatsAppUrl(selectedOrder, 'tracking')} 
                       target="_blank" 
                       rel="noreferrer"
-                      className="btn btn-ghost btn-small"
-                      style={{ 
-                        width: '100%', justifyContent: 'center', background: '#25D36620', 
-                        color: '#25D366', borderColor: '#25D36640', gap: 8 
-                      }}
+                      className="whatsapp-btn"
+                      style={{ width: '100%', justifyContent: 'center', fontSize: '0.8rem' }}
                     >
-                      <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
                         <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/>
                       </svg>
                       Send Tracking to Customer
@@ -285,48 +301,55 @@ export default function OrdersManager({ showToast }) {
               </div>
             </div>
 
-            <div style={{ borderTop: '1px solid var(--border)', paddingTop: 24 }}>
-              <h4 style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase', marginBottom: 16 }}>Update Status</h4>
+            <div style={{ 
+              borderTop: '1px solid rgba(255,255,255,0.08)', 
+              paddingTop: 32, 
+              background: 'linear-gradient(180deg, rgba(255,255,255,0.02) 0%, transparent 100%)',
+              margin: '0 -36px -36px',
+              padding: '32px 36px'
+            }}>
+              <span className="section-label">Update Status</span>
               
               {selectedOrder.status === 'Processing' && (
                 <div style={{ display: 'flex', gap: 12 }}>
-                  <button className="btn btn-primary" style={{ flex: 1 }} onClick={() => handleUpdateStatus(selectedOrder.id, 'Confirmed')}>Confirm Order</button>
-                  <button className="btn btn-danger" onClick={() => handleUpdateStatus(selectedOrder.id, 'Cancelled')}>Cancel</button>
+                  <button className="btn btn-primary" style={{ flex: 1, padding: '14px' }} onClick={() => handleUpdateStatus(selectedOrder.id, 'Confirmed')}>Confirm Order</button>
+                  <button className="btn btn-danger" style={{ padding: '14px' }} onClick={() => handleUpdateStatus(selectedOrder.id, 'Cancelled')}>Cancel</button>
                 </div>
               )}
 
               {selectedOrder.status === 'Confirmed' && (
-                <button className="btn btn-primary" style={{ width: '100%' }} onClick={() => handleUpdateStatus(selectedOrder.id, 'Packed')}>Mark as Packed</button>
+                <button className="btn btn-primary" style={{ width: '100%', padding: '14px' }} onClick={() => handleUpdateStatus(selectedOrder.id, 'Packed')}>Mark as Packed</button>
               )}
 
               {selectedOrder.status === 'Packed' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                   <div className="form-group">
-                    <label className="form-label">DTDC Tracking ID</label>
+                    <label className="form-label" style={{ fontSize: '0.75rem' }}>DTDC Tracking ID</label>
                     <input 
                       type="text" 
                       className="form-input" 
                       placeholder="Enter DTDC consignment number"
                       value={trackingId}
                       onChange={(e) => setTrackingId(e.target.value)}
+                      style={{ padding: '14px', fontSize: '1rem', background: 'rgba(255,255,255,0.05)' }}
                     />
                   </div>
-                  <button className="btn btn-primary" style={{ width: '100%' }} onClick={() => handleUpdateStatus(selectedOrder.id, 'Shipped')}>Ship Order</button>
+                  <button className="btn btn-primary" style={{ width: '100%', padding: '14px' }} onClick={() => handleUpdateStatus(selectedOrder.id, 'Shipped')}>Ship Order</button>
                 </div>
               )}
 
               {selectedOrder.status === 'Shipped' && (
-                <button className="btn btn-primary" style={{ width: '100%' }} onClick={() => handleUpdateStatus(selectedOrder.id, 'Out for Delivery')}>Mark Out for Delivery</button>
+                <button className="btn btn-primary" style={{ width: '100%', padding: '14px' }} onClick={() => handleUpdateStatus(selectedOrder.id, 'Out for Delivery')}>Mark Out for Delivery</button>
               )}
 
               {selectedOrder.status === 'Out for Delivery' && (
-                <button className="btn btn-primary" style={{ width: '100%' }} onClick={() => handleUpdateStatus(selectedOrder.id, 'Delivered')}>Mark as Delivered</button>
+                <button className="btn btn-primary" style={{ width: '100%', padding: '14px', fontSize: '1rem' }} onClick={() => handleUpdateStatus(selectedOrder.id, 'Delivered')}>Mark as Delivered</button>
               )}
 
               {(selectedOrder.status === 'Delivered' || selectedOrder.status === 'Cancelled') && (
                 <div style={{ display: 'flex', gap: 12 }}>
-                  <button className="btn btn-ghost" style={{ flex: 1 }} onClick={() => handleUpdateStatus(selectedOrder.id, 'Returned')}>Mark as Returned</button>
-                  <button className="btn btn-ghost" style={{ flex: 1 }} onClick={() => handleUpdateStatus(selectedOrder.id, 'Refunded')}>Mark as Refunded</button>
+                  <button className="btn btn-ghost" style={{ flex: 1, padding: '12px' }} onClick={() => handleUpdateStatus(selectedOrder.id, 'Returned')}>Mark as Returned</button>
+                  <button className="btn btn-ghost" style={{ flex: 1, padding: '12px' }} onClick={() => handleUpdateStatus(selectedOrder.id, 'Refunded')}>Mark as Refunded</button>
                 </div>
               )}
             </div>
