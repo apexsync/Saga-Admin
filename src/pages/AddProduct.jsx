@@ -9,6 +9,8 @@ const CATEGORIES = [
   'Pendants',
   'Rings',
   'Anklets',
+  'Sets',
+  'Black Metal',
 ];
 
 export default function AddProduct({ editProduct, onSave, onCancel, showToast }) {
