@@ -113,7 +113,7 @@ export default function OrdersManager({ showToast }) {
                   </td>
                   <td>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <span style={{ fontWeight: 600 }}>{order.address?.firstName} {order.address?.lastName}</span>
+                      <span style={{ fontWeight: 600 }}>{order.customerName || 'Customer'}</span>
                       <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{order.address?.phone || 'No phone'}</span>
                     </div>
                   </td>
@@ -159,10 +159,13 @@ export default function OrdersManager({ showToast }) {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 32 }}>
               <div>
                 <h4 style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase', marginBottom: 12 }}>Customer Details</h4>
-                <p style={{ fontWeight: 600 }}>{selectedOrder.address?.firstName} {selectedOrder.address?.lastName}</p>
+                <p style={{ fontWeight: 600 }}>{selectedOrder.customerName || 'Customer'}</p>
                 <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginTop: 4 }}>
-                  {selectedOrder.address?.addressLine1},<br />
-                  {selectedOrder.address?.city}, {selectedOrder.address?.state} - {selectedOrder.address?.pincode}
+                  {selectedOrder.customerEmail}
+                </p>
+                <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginTop: 4 }}>
+                  {selectedOrder.address?.street},<br />
+                  {selectedOrder.address?.city} - {selectedOrder.address?.zip}
                 </p>
                 <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginTop: 8 }}>
                   📞 {selectedOrder.address?.phone}
