@@ -211,7 +211,8 @@ export default function OrdersManager({ showToast }) {
                 <span className="section-label">Customer Details</span>
                 <p style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 4 }}>{selectedOrder.customerName || 'Customer'}</p>
                 <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: 12 }}>
-                  {selectedOrder.customerEmail}
+                  {selectedOrder.customerEmail} <br />
+                  <span style={{ color: 'var(--primary)', fontWeight: 500 }}>{selectedOrder.address?.phone || 'No Phone'}</span>
                 </p>
                 
                 <div style={{ 
