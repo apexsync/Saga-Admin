@@ -219,9 +219,13 @@ export default function OrdersManager({ showToast }) {
                   border: '1px solid rgba(255,255,255,0.05)', marginBottom: 20 
                 }}>
                   <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-                    {selectedOrder.address?.street},<br />
+                    {selectedOrder.address?.addressLine1}{selectedOrder.address?.addressLine2 ? `, ${selectedOrder.address.addressLine2}` : ''}
+                    {selectedOrder.address?.landmark && (
+                      <><br /><span style={{ fontSize: '0.75rem', opacity: 0.8 }}>Near: {selectedOrder.address.landmark}</span></>
+                    )}
+                    <br />
                     <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
-                      {selectedOrder.address?.city} - {selectedOrder.address?.zip}
+                      {selectedOrder.address?.city}, {selectedOrder.address?.state} - {selectedOrder.address?.pincode}
                     </span>
                   </p>
                 </div>
