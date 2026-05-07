@@ -6,6 +6,7 @@ import AddProduct from './pages/AddProduct';
 import Login from './pages/Login';
 import ReviewsManager from './pages/ReviewsManager';
 import OrdersManager from './pages/OrdersManager';
+import StoreConfig from './pages/StoreConfig';
 import './App.css';
 
 
@@ -65,8 +66,12 @@ function App() {
     <div className="app-container">
       {/* Sidebar */}
       <aside className="sidebar">
-        <div className="sidebar-logo">
-          Saga<span>Admin Panel</span>
+        <div className="sidebar-logo" style={{ padding: '20px 24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <img src="/Logo.png" alt="Saga" style={{ height: '32px', filter: 'brightness(0) invert(1)' }} />
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <span style={{ fontSize: '1.2rem', fontWeight: 700, letterSpacing: '2px', color: '#fff', lineHeight: 1 }}>SAGA</span>
+            <span style={{ fontSize: '0.65rem', color: 'var(--primary)', fontWeight: 600, letterSpacing: '1px', marginTop: '2px' }}>ADMIN PANEL</span>
+          </div>
         </div>
         <nav className="sidebar-nav">
           <button
@@ -105,6 +110,16 @@ function App() {
             </svg>
             Orders
           </button>
+          <button
+            className={`sidebar-link ${currentPage === 'appearance' ? 'active' : ''}`}
+            onClick={() => { setCurrentPage('appearance'); setEditProduct(null); }}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9.53 16.122a3 3 0 0 0-5.78 1.128 2.25 2.25 0 0 1-2.4 2.245 4.5 4.5 0 0 0 8.4-2.245c0-.399-.078-.78-.22-1.127Zm9.42-2.03a1.5 1.5 0 1 1-3.001 0 1.5 1.5 0 0 1 3.001 0ZM14.99 10.11a3 3 0 1 0-5.998 0 3 3 0 0 0 5.998 0Z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="m14.673 14.915-3.007-3.508m-3.329-3.974 6.336 7.482Zm0 0-4.563-5.369m10.906 12.894-3.008-3.508m0 0-4.562-5.369m0 0 5.107 6.012m-9.635-11.379a2.25 2.25 0 0 1 4.5 0 2.25 2.25 0 0 1-4.5 0Zm20.93 12.531a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+            </svg>
+            Appearance
+          </button>
         </nav>
         <button className="sidebar-link" onClick={handleLogout} style={{ marginTop: 'auto' }}>
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
@@ -136,6 +151,9 @@ function App() {
         )}
         {currentPage === 'orders' && (
           <OrdersManager showToast={showToast} />
+        )}
+        {currentPage === 'appearance' && (
+          <StoreConfig showToast={showToast} />
         )}
       </main>
 
