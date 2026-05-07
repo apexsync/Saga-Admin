@@ -594,7 +594,303 @@ tr:hover {
   margin-bottom: 20px;
 }
 
-/* Responsive */
+/* ===== RESPONSIVE / MOBILE ===== */
+
+/* Mobile top bar – hidden on desktop */
+.mobile-topbar {
+  display: none;
+}
+
+/* Sidebar overlay backdrop – hidden on desktop */
+.sidebar-backdrop {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  /* ---------- Mobile top bar ---------- */
+  .mobile-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 56px;
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border);
+    padding: 0 16px;
+    z-index: 60;
+  }
+
+  .mobile-topbar-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .mobile-topbar-logo img {
+    height: 28px;
+  }
+
+  .mobile-topbar-logo span {
+    font-size: 0.55rem;
+    color: var(--text-muted);
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .hamburger-btn {
+    background: none;
+    border: none;
+    color: var(--text-primary);
+    padding: 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .hamburger-btn:active {
+    background: rgba(255, 255, 255, 0.08);
+  }
+  .hamburger-btn svg {
+    width: 24px;
+    height: 24px;
+    display: block;
+  }
+
+  /* ---------- Sidebar as slide-out drawer ---------- */
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 70;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+  .sidebar-backdrop.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .sidebar {
+    width: 270px;
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 80;
+    padding-top: 16px;
+  }
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  /* ---------- Main content adjustments ---------- */
+  .main-content {
+    margin-left: 0;
+    padding: 16px;
+    padding-top: 72px; /* below the mobile top bar */
+    min-height: 100vh;
+  }
+
+  /* ---------- Page headers ---------- */
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .page-header .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .page-title {
+    font-size: 1.35rem;
+  }
+
+  /* ---------- Stats grid ---------- */
+  .stats-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .stat-card {
+    padding: 14px 16px;
+  }
+
+  .stat-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+  }
+  .stat-icon svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .stat-value {
+    font-size: 1.2rem;
+  }
+
+  /* ---------- Form rows ---------- */
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  /* ---------- Table → Card layout ---------- */
+  .table-container {
+    border-radius: 12px;
+  }
+
+  .table-header {
+    padding: 14px 16px;
+  }
+
+  table, thead, tbody, th, tr {
+    display: block;
+  }
+
+  thead {
+    display: none; /* Hide table headers on mobile */
+  }
+
+  tr {
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+    gap: 8px;
+  }
+
+  tr:last-child {
+    border-bottom: none;
+  }
+
+  td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 0;
+    border-bottom: none;
+    font-size: 0.85rem;
+  }
+
+  /* Label the cells with data-label (set in JSX) */
+  td::before {
+    content: attr(data-label);
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    min-width: 80px;
+    flex-shrink: 0;
+  }
+
+  .product-cell {
+    justify-content: flex-start;
+  }
+
+  .actions-cell {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 6px;
+  }
+
+  .actions-cell .btn {
+    flex: 1 1 auto;
+    min-width: 0;
+    justify-content: center;
+    font-size: 0.75rem;
+    padding: 8px 10px;
+  }
+
+  /* ---------- Buttons – larger touch targets ---------- */
+  .btn {
+    padding: 12px 18px;
+    font-size: 0.85rem;
+  }
+  .btn-small {
+    padding: 8px 12px;
+    font-size: 0.78rem;
+  }
+
+  /* ---------- Modals – full width on mobile ---------- */
+  .modal-overlay {
+    padding: 12px;
+    align-items: flex-end;
+  }
+
+  .modal {
+    max-width: 100% !important;
+    max-height: 85vh;
+    border-radius: 20px 20px 0 0;
+    padding: 24px 20px;
+    width: 100%;
+  }
+
+  .modal-title {
+    font-size: 1.1rem;
+  }
+
+  /* ---------- Toast – full width at bottom ---------- */
+  .toast {
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    width: auto;
+    justify-content: center;
+  }
+
+  /* ---------- Login card ---------- */
+  .login-card {
+    margin: 0 16px;
+    padding: 28px 20px;
+  }
+
+  .login-title {
+    font-size: 1.4rem;
+  }
+
+  /* ---------- Card ---------- */
+  .card {
+    padding: 16px;
+    border-radius: 12px;
+  }
+}
+
+/* Small phones (< 400px) */
+@media (max-width: 400px) {
+  .main-content {
+    padding: 12px;
+    padding-top: 68px;
+  }
+
+  .page-title {
+    font-size: 1.15rem;
+  }
+
+  .stat-card {
+    padding: 12px;
+  }
+
+  .stat-value {
+    font-size: 1rem;
+  }
+
+  .modal {
+    padding: 20px 16px;
+  }
+
+  .btn {
+    padding: 10px 14px;
+    font-size: 0.8rem;
+  }
+}
 
 /* Custom Polished Components */
 .id-chip {
@@ -668,18 +964,4 @@ tr:hover {
   100% { transform: scale(1); opacity: 1; }
 }
 
-@media (max-width: 768px) {
-  .sidebar {
-    display: none;
-  }
-  .main-content {
-    margin-left: 0;
-    padding: 20px;
-  }
-  .form-row {
-    grid-template-columns: 1fr;
-  }
-  .stats-grid {
-    grid-template-columns: 1fr;
-  }
-}
+

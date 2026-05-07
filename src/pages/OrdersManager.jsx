@@ -96,14 +96,14 @@ export default function OrdersManager({ showToast }) {
           <h1 className="page-title">Order Management</h1>
           <p className="page-subtitle">Track sales and update shipping statuses</p>
         </div>
-        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center' }}>
           <input 
             type="text" 
             placeholder="Search Order ID, Name or Phone..." 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="form-input"
-            style={{ marginBottom: 0, minWidth: '250px' }}
+            style={{ marginBottom: 0, minWidth: '200px', flex: '1 1 200px' }}
           />
           <div className="stat-card" style={{ padding: '8px 16px', marginBottom: 0 }}>
              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Partner:</span>
@@ -141,20 +141,20 @@ export default function OrdersManager({ showToast }) {
             <tbody>
               {filteredOrders.map(order => (
                 <tr key={order.id}>
-                  <td>
+                  <td data-label="Order ID">
                     <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>
                       #{order.id.slice(-6).toUpperCase()}
                     </span>
                   </td>
-                  <td>
+                  <td data-label="Customer">
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                       <span style={{ fontWeight: 600 }}>{order.customerName || 'Customer'}</span>
                       <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{order.address?.phone || 'No phone'}</span>
                     </div>
                   </td>
-                  <td>{order.items?.length || 0} product(s)</td>
-                  <td style={{ fontWeight: 600 }}>₹{Number(order.total).toLocaleString()}</td>
-                  <td>
+                  <td data-label="Items">{order.items?.length || 0} product(s)</td>
+                  <td data-label="Total" style={{ fontWeight: 600 }}>₹{Number(order.total).toLocaleString()}</td>
+                  <td data-label="Status">
                     <span className="category-badge" style={{ 
                       background: `${getStatusColor(order.status)}20`, 
                       color: getStatusColor(order.status),
@@ -163,10 +163,10 @@ export default function OrdersManager({ showToast }) {
                       {order.status}
                     </span>
                   </td>
-                  <td style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                  <td data-label="Date" style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
                     {order.createdAt.toLocaleDateString()}
                   </td>
-                  <td>
+                  <td data-label="">
                     <button className="btn btn-ghost btn-small" onClick={() => setSelectedOrder(order)}>
                       Manage
                     </button>
@@ -206,7 +206,7 @@ export default function OrdersManager({ showToast }) {
               </button>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 32, marginBottom: 40 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 24, marginBottom: 40 }}>
               <div>
                 <span className="section-label">Customer Details</span>
                 <p style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 4 }}>{selectedOrder.customerName || 'Customer'}</p>

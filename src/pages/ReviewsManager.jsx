@@ -94,19 +94,19 @@ export default function ReviewsManager({ showToast }) {
             <tbody>
               {reviews.map(review => (
                 <tr key={review.id}>
-                  <td style={{ maxWidth: 150 }}>
+                  <td data-label="Product" style={{ maxWidth: 150 }}>
                     <div style={{ fontSize: '0.8rem', fontWeight: 600 }}>{review.productName || 'General'}</div>
                     <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
                         {review.productId?.slice(-6).toUpperCase()}
                     </div>
                   </td>
-                  <td>
+                  <td data-label="Customer">
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                         <span style={{ fontWeight: 600 }}>{review.userName || 'Anonymous'}</span>
                         <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{review.userEmail}</span>
                     </div>
                   </td>
-                  <td>
+                  <td data-label="Rating">
                     <div style={{ display: 'flex', color: '#f59e0b' }}>
                         {[...Array(5)].map((_, i) => (
                             <svg key={i} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill={i < review.rating ? "currentColor" : "none"} stroke="currentColor" strokeWidth={1.5} style={{ width: 14, height: 14 }}>
@@ -115,7 +115,7 @@ export default function ReviewsManager({ showToast }) {
                         ))}
                     </div>
                   </td>
-                  <td>
+                  <td data-label="Feedback">
                     <div style={{ maxWidth: 300 }}>
                         <p style={{ fontSize: '0.875rem', whiteSpace: 'normal' }}>{review.comment}</p>
                         {review.adminReply && (
@@ -126,14 +126,14 @@ export default function ReviewsManager({ showToast }) {
                         )}
                     </div>
                   </td>
-                  <td>
+                  <td data-label="Status">
                     {review.adminReply ? (
                         <span className="category-badge" style={{ background: 'rgba(34, 197, 94, 0.1)', color: 'var(--success)', borderColor: 'rgba(34, 197, 94, 0.2)' }}>Replied</span>
                     ) : (
                         <span className="category-badge" style={{ background: 'rgba(245, 158, 11, 0.1)', color: 'var(--warning)', borderColor: 'rgba(245, 158, 11, 0.2)' }}>Pending</span>
                     )}
                   </td>
-                  <td>
+                  <td data-label="">
                     <div className="actions-cell">
                         <button className="btn btn-ghost btn-small" onClick={() => startReply(review)}>
                             {review.adminReply ? 'Edit' : 'Reply'}

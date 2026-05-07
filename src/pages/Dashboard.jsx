@@ -177,7 +177,7 @@ export default function Dashboard({ onEdit, onAddNew, showToast }) {
             <tbody>
               {products.map(product => (
                 <tr key={product.id}>
-                  <td>
+                  <td data-label="Product">
                     <div className="product-cell">
                       {product.imageUrl ? (
                         <img src={product.imageUrl} alt={product.name} className="product-thumb" />
@@ -189,17 +189,17 @@ export default function Dashboard({ onEdit, onAddNew, showToast }) {
                       <span className="product-name">{product.name}</span>
                     </div>
                   </td>
-                  <td><span className="category-badge">{product.category}</span></td>
-                  <td style={{ fontWeight: 600 }}>₹{Number(product.price).toLocaleString()}</td>
-                  <td style={{ fontWeight: 500, color: (product.stock <= 0) ? 'var(--danger)' : (product.stock < 5) ? 'var(--warning)' : 'inherit' }}>
+                  <td data-label="Category"><span className="category-badge">{product.category}</span></td>
+                  <td data-label="Price" style={{ fontWeight: 600 }}>₹{Number(product.price).toLocaleString()}</td>
+                  <td data-label="Stock" style={{ fontWeight: 500, color: (product.stock <= 0) ? 'var(--danger)' : (product.stock < 5) ? 'var(--warning)' : 'inherit' }}>
                     {product.stock || 0}
                   </td>
-                  <td style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                  <td data-label="Added" style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
                     {product.createdAt instanceof Date
                       ? product.createdAt.toLocaleDateString()
                       : 'N/A'}
                   </td>
-                  <td>
+                  <td data-label="">
                     <div className="actions-cell">
                       <button className="btn btn-ghost btn-small" title="View Details" onClick={() => setViewingProduct(product)}>
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: 16, height: 16 }}>
@@ -248,7 +248,7 @@ export default function Dashboard({ onEdit, onAddNew, showToast }) {
               </button>
             </div>
             
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24 }}>
               {/* Left: Media */}
               <div>
                 <div style={{ marginBottom: 20 }}>
@@ -285,7 +285,7 @@ export default function Dashboard({ onEdit, onAddNew, showToast }) {
                    <span className="category-badge">{viewingProduct.category}</span>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 12, marginBottom: 24 }}>
                     {[
                       { label: 'Material', value: viewingProduct.material },
                       { label: 'Purity', value: viewingProduct.purity },
