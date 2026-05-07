@@ -32,8 +32,7 @@ export default function Login({ showToast }) {
     <div className="login-container">
       <div className="login-card">
         <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-          <img src="/Logo.png" alt="Saga" style={{ height: '60px', filter: 'brightness(0) invert(1)', marginBottom: '16px' }} />
-          <h1 className="login-title" style={{ marginTop: 0 }}>SAGA</h1>
+          <img src="/Logo.png" alt="Saga" style={{ height: '70px', marginBottom: '16px' }} />
           <p className="login-subtitle">Admin Panel · Enter credentials to continue</p>
         </div>
 

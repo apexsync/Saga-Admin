@@ -67,11 +67,8 @@ function App() {
       {/* Sidebar */}
       <aside className="sidebar">
         <div className="sidebar-logo" style={{ padding: '20px 24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <img src="/Logo.png" alt="Saga" style={{ height: '32px', filter: 'brightness(0) invert(1)' }} />
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span style={{ fontSize: '1.2rem', fontWeight: 700, letterSpacing: '2px', color: '#fff', lineHeight: 1 }}>SAGA</span>
-            <span style={{ fontSize: '0.65rem', color: 'var(--primary)', fontWeight: 600, letterSpacing: '1px', marginTop: '2px' }}>ADMIN PANEL</span>
-          </div>
+          <img src="/Logo.png" alt="Saga" style={{ height: '40px' }} />
+          <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '2px', textTransform: 'uppercase' }}>Admin Panel</span>
         </div>
         <nav className="sidebar-nav">
           <button
