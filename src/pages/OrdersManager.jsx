@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react';
-import { fetchAllOrders, updateOrderStatus, generateShippingLabel, cancelConsignment } from '../services/orders';
+import { fetchAllOrders, updateOrderStatus, generateShippingLabel, cancelConsignment, refundPayment } from '../services/orders';
 
 export default function OrdersManager({ showToast }) {
   const [orders, setOrders] = useState([]);
@@ -9,6 +8,7 @@ export default function OrdersManager({ showToast }) {
   const [updating, setUpdating] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isGeneratingLabel, setIsGeneratingLabel] = useState(false);
+  const [shouldRefund, setShouldRefund] = useState(false);
 
   useEffect(() => {
     loadOrders();
@@ -35,8 +35,9 @@ export default function OrdersManager({ showToast }) {
         updates.courier = 'DTDC';
       }
       
-      // If canceling and there's a tracking ID, try to cancel with DTDC as well
-      const awb = orders.find(o => o.id === orderId)?.trackingId || orders.find(o => o.id === orderId)?.awb;
+      // 1. Handle DTDC Shipment Cancellation if needed
+      const order = orders.find(o => o.id === orderId);
+      const awb = order?.trackingId || order?.awb;
       if (newStatus === 'Cancelled' && awb) {
         try {
           await cancelConsignment(awb);
@@ -44,6 +45,21 @@ export default function OrdersManager({ showToast }) {
         } catch (shipErr) {
           console.error("DTDC Cancellation failed:", shipErr);
           showToast('Order canceled in Firestore, but DTDC cancellation failed', 'warning');
+        }
+      }
+
+      // 2. Handle Razorpay Refund if requested
+      if (newStatus === 'Cancelled' && shouldRefund && order?.paymentId) {
+        try {
+          await refundPayment(order.paymentId);
+          updates.status = 'Refunded';
+          updates.refunded = true;
+          updates.refundDate = new Date();
+          showToast('Razorpay refund issued successfully');
+        } catch (refundErr) {
+          console.error("Refund failed:", refundErr);
+          showToast(refundErr.message || 'Refund failed, please check Razorpay dashboard', 'error');
+          // If refund fails, we might still want to cancel the order, but let's inform the user
         }
       }
 
@@ -353,9 +369,29 @@ export default function OrdersManager({ showToast }) {
               <span className="section-label">Update Status</span>
               
               {selectedOrder.status === 'Processing' && (
-                <div style={{ display: 'flex', gap: 12 }}>
-                  <button className="btn btn-primary" style={{ flex: 1, padding: '14px' }} onClick={() => handleUpdateStatus(selectedOrder.id, 'Confirmed')}>Confirm Order</button>
-                  <button className="btn btn-danger" style={{ padding: '14px' }} onClick={() => handleUpdateStatus(selectedOrder.id, 'Cancelled')}>Cancel</button>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  {selectedOrder.paymentId && (
+                    <label className="flex items-center gap-3 cursor-pointer p-3 bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 transition-colors">
+                      <input 
+                        type="checkbox" 
+                        checked={shouldRefund} 
+                        onChange={(e) => setShouldRefund(e.target.checked)}
+                        className="w-4 h-4 rounded border-white/20 bg-transparent text-primary focus:ring-primary"
+                      />
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium text-white">Issue Full Refund via Razorpay</span>
+                        <span className="text-[10px] text-white/40">Money will be returned to original payment method</span>
+                      </div>
+                    </label>
+                  )}
+                  <div style={{ display: 'flex', gap: 12 }}>
+                    <button className="btn btn-primary" style={{ flex: 1, padding: '14px' }} onClick={() => handleUpdateStatus(selectedOrder.id, 'Confirmed')}>Confirm Order</button>
+                    <button className="btn btn-danger" style={{ padding: '14px' }} onClick={() => {
+                       handleUpdateStatus(selectedOrder.id, 'Cancelled');
+                    }}>
+                      {shouldRefund ? 'Cancel & Refund' : 'Cancel Order'}
+                    </button>
+                  </div>
                 </div>
               )}
 

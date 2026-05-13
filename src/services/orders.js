@@ -114,3 +114,31 @@ export async function cancelConsignment(awb) {
     throw error;
   }
 }
+
+/**
+ * Issue a refund for a payment via backend
+ * @param {string} paymentId - The Razorpay payment ID
+ * @param {number} amount - Optional amount in rupees
+ */
+export async function refundPayment(paymentId, amount = null) {
+  try {
+    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+    const response = await fetch(`${BACKEND_URL}/refund-payment`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ paymentId, amount }),
+    });
+
+    const result = await response.json();
+    if (!response.ok) {
+      throw new Error(result.error || 'Failed to issue refund');
+    }
+
+    return result;
+  } catch (error) {
+    console.error("Error calling refundPayment:", error);
+    throw error;
+  }
+}
