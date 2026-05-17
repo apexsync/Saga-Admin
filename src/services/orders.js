@@ -14,45 +14,80 @@ import {
   orderBy,
 } from 'firebase/firestore';
 
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
 const ORDERS_COLLECTION = 'orders';
 
 /**
- * Fetch all orders for admin
+ * Fetch all orders for admin via backend
  */
 export async function fetchAllOrders() {
   try {
-    const q = query(
-      collection(db, ORDERS_COLLECTION),
-      orderBy('createdAt', 'desc')
-    );
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-      createdAt: doc.data().createdAt?.toDate() || new Date(),
+    const response = await fetch(`${BACKEND_URL}/admin/orders`);
+    if (!response.ok) throw new Error('Failed to fetch orders');
+    
+    const orders = await response.json();
+    return orders.map(order => ({
+      ...order,
+      createdAt: order.createdAt ? new Date(order.createdAt) : new Date(),
     }));
   } catch (error) {
     console.error("Error fetching orders:", error);
-    return [];
+    // Fallback to Firestore direct read if backend is down
+    try {
+        const q = query(
+          collection(db, ORDERS_COLLECTION),
+          orderBy('createdAt', 'desc')
+        );
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+          createdAt: doc.data().createdAt?.toDate() || new Date(),
+        }));
+    } catch {
+        return [];
+    }
   }
 }
 
 /**
- * Update order status and tracking info
+ * Update order status and tracking info via backend
  * @param {string} orderId 
  * @param {Object} updates - { status, trackingId, courier }
  */
 export async function updateOrderStatus(orderId, updates) {
   try {
-    const docRef = doc(db, ORDERS_COLLECTION, orderId);
-    await updateDoc(docRef, {
-      ...updates,
-      updatedAt: new Date()
+    const response = await fetch(`${BACKEND_URL}/update-order-status`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ 
+        orderId, 
+        status: updates.status,
+        ...updates // Pass other updates if the backend supports them
+      }),
     });
+
+    if (!response.ok) {
+        const result = await response.json();
+        throw new Error(result.error || 'Failed to update order status');
+    }
+
     return true;
   } catch (error) {
     console.error("Error updating order:", error);
-    throw error;
+    // Fallback to direct Firestore update
+    try {
+        const docRef = doc(db, ORDERS_COLLECTION, orderId);
+        await updateDoc(docRef, {
+          ...updates,
+          updatedAt: new Date()
+        });
+        return true;
+    } catch (e) {
+        throw error;
+    }
   }
 }
 
