@@ -151,6 +151,41 @@ export async function cancelConsignment(awb) {
 }
 
 /**
+ * Book a DTDC consignment via the delivery backend (Shipsy API).
+ * The backend saves awbNumber to Firestore and sets status to 'Shipped'.
+ * @param {Object} order - The full order object from Firestore
+ * @returns {string} The AWB/tracking number assigned by DTDC
+ */
+export async function createConsignment(order) {
+  try {
+    const DELIVERY_BACKEND_URL = import.meta.env.VITE_DELIVERY_BACKEND_URL || 'http://localhost:5001';
+    const response = await fetch(`${DELIVERY_BACKEND_URL}/create-consignment`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        orderId: order.id,
+        address: order.address,
+        total: order.total,
+        items: order.items,
+        customerName: order.customerName,
+      }),
+    });
+
+    const result = await response.json();
+    if (!response.ok) {
+      throw new Error(result.error || 'Failed to book DTDC consignment');
+    }
+
+    return result.awb;
+  } catch (error) {
+    console.error('Error booking DTDC consignment:', error);
+    throw error;
+  }
+}
+
+/**
  * Issue a refund for a payment via backend
  * @param {string} paymentId - The Razorpay payment ID
  * @param {number} amount - Optional amount in rupees
