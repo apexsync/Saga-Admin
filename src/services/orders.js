@@ -98,8 +98,8 @@ export async function updateOrderStatus(orderId, updates) {
  */
 export async function generateShippingLabel(awb, labelCode = 'SHIP_LABEL_4X6') {
   try {
-    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
-    const url = `${BACKEND_URL}/generate-label?awb=${awb}&label_code=${labelCode}&label_format=pdf`;
+    const DELIVERY_BACKEND_URL = import.meta.env.VITE_DELIVERY_BACKEND_URL || 'http://localhost:5001';
+    const url = `${DELIVERY_BACKEND_URL}/generate-label?awb=${awb}&label_code=${labelCode}&label_format=pdf`;
     
     const response = await fetch(url);
     if (!response.ok) {
@@ -129,8 +129,8 @@ export async function generateShippingLabel(awb, labelCode = 'SHIP_LABEL_4X6') {
  */
 export async function cancelConsignment(awb) {
   try {
-    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
-    const response = await fetch(`${BACKEND_URL}/cancel-consignment`, {
+    const DELIVERY_BACKEND_URL = import.meta.env.VITE_DELIVERY_BACKEND_URL || 'http://localhost:5001';
+    const response = await fetch(`${DELIVERY_BACKEND_URL}/cancel-consignment`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
