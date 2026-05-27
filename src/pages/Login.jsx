@@ -1,14 +1,29 @@
 import { useState } from 'react';
 import { auth } from '../services/firebase';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 
 export default function Login({ showToast }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  const handleGoogleLogin = async () => {
+    setIsGoogleLoading(true);
+    setError('');
+    try {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+      showToast('Logged in successfully!');
+    } catch (err) {
+      console.error("Google Login Error:", err);
+      setError('Google login failed. Please try again.');
+    } finally {
+      setIsGoogleLoading(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -33,6 +48,7 @@ export default function Login({ showToast }) {
       <div className="login-card">
         <div style={{ textAlign: 'center', marginBottom: '24px' }}>
           <img src="/Logo.png" alt="Saga" style={{ height: '70px', marginBottom: '16px' }} />
+          <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--text-main)', marginBottom: '8px' }}>Welcome Back</h2>
           <p className="login-subtitle">Admin Panel · Enter credentials to continue</p>
         </div>
 
@@ -98,12 +114,43 @@ export default function Login({ showToast }) {
           <button
             type="submit"
             className="btn btn-primary"
-            style={{ width: '100%', justifyContent: 'center', padding: '14px' }}
-            disabled={loading}
+            style={{ width: '100%', justifyContent: 'center', padding: '14px', marginBottom: '16px' }}
+            disabled={loading || isGoogleLoading}
           >
             {loading ? 'Verifying...' : 'Sign In'}
           </button>
         </form>
+
+        <div style={{ position: 'relative', margin: '24px 0', textAlign: 'center' }}>
+          <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, borderTop: '1px solid var(--border-color)', zIndex: 0 }}></div>
+          <span style={{ position: 'relative', background: 'var(--bg-card)', padding: '0 12px', color: 'var(--text-muted)', fontSize: '14px' }}>Or continue with</span>
+        </div>
+
+        <button
+          type="button"
+          className="btn"
+          style={{ 
+            width: '100%', 
+            justifyContent: 'center', 
+            padding: '12px', 
+            background: 'transparent',
+            border: '1px solid var(--border-color)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px'
+          }}
+          onClick={handleGoogleLogin}
+          disabled={loading || isGoogleLoading}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M23.49 12.27c0-.79-.07-1.54-.19-2.27h-11.3v4.51h6.47c-.29 1.48-1.14 2.73-2.4 3.58v3h3.86c2.26-2.09 3.56-5.17 3.56-8.82z"/>
+            <path fill="#34A853" d="M12 24c3.24 0 5.97-1.09 7.96-2.91l-3.86-3c-1.08.72-2.45 1.16-4.1 1.16-3.15 0-5.81-2.13-6.76-4.99H1.4v3.13C3.37 21.2 7.39 24 12 24z"/>
+            <path fill="#FBBC05" d="M5.24 14.26c-.24-.72-.37-1.48-.37-2.26s.13-1.54.37-2.26V6.61H1.4C.51 8.24 0 10.06 0 12s.51 3.76 1.4 5.39l3.84-3.13z"/>
+            <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.96 1.19 15.24 0 12 0 7.39 0 3.37 2.8 1.4 6.61l3.84 3.13c.95-2.86 3.61-4.99 6.76-4.99z"/>
+          </svg>
+          {isGoogleLoading ? 'Connecting...' : 'Sign in with Google'}
+        </button>
+
       </div>
     </div>
   );
