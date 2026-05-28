@@ -212,3 +212,52 @@ export async function refundPayment(paymentId, amount = null) {
     throw error;
   }
 }
+
+/**
+ * Fetch live tracking details for an AWB from the delivery backend.
+ * @param {string} awb - The AWB/tracking number
+ */
+export async function fetchTrackingDetails(awb) {
+  try {
+    const DELIVERY_BACKEND_URL = import.meta.env.VITE_DELIVERY_BACKEND_URL || 'http://localhost:5001';
+    const response = await fetch(`${DELIVERY_BACKEND_URL}/track-order`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ awbNumber: awb }),
+    });
+
+    const result = await response.json();
+    if (!response.ok) {
+      throw new Error(result.error || 'Failed to fetch tracking details');
+    }
+
+    return result;
+  } catch (error) {
+    console.error("Error fetching tracking details:", error);
+    throw error;
+  }
+}
+
+/**
+ * Triggers background sync of all active order statuses from DTDC live registry.
+ */
+export async function syncOrderStatuses() {
+  try {
+    const DELIVERY_BACKEND_URL = import.meta.env.VITE_DELIVERY_BACKEND_URL || 'http://localhost:5001';
+    const response = await fetch(`${DELIVERY_BACKEND_URL}/sync-order-statuses`, {
+      method: 'GET',
+    });
+
+    const result = await response.json();
+    if (!response.ok) {
+      throw new Error(result.error || 'Failed to sync order statuses');
+    }
+
+    return result;
+  } catch (error) {
+    console.error("Error triggering status sync:", error);
+    throw error;
+  }
+}

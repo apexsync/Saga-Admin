@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { fetchAllOrders, updateOrderStatus, generateShippingLabel, cancelConsignment, refundPayment, createConsignment } from '../services/orders';
+import { fetchAllOrders, updateOrderStatus, generateShippingLabel, cancelConsignment, refundPayment, createConsignment, fetchTrackingDetails, syncOrderStatuses } from '../services/orders';
 
 export default function OrdersManager({ showToast }) {
   const [orders, setOrders] = useState([]);
@@ -11,6 +11,45 @@ export default function OrdersManager({ showToast }) {
   const [isGeneratingLabel, setIsGeneratingLabel] = useState(false);
   const [shouldRefund, setShouldRefund] = useState(false);
   const [isBookingShipment, setIsBookingShipment] = useState(false);
+  const [trackingInfo, setTrackingInfo] = useState(null);
+  const [isLoadingTracking, setIsLoadingTracking] = useState(false);
+  const [trackingError, setTrackingError] = useState(null);
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  useEffect(() => {
+    if (selectedOrder) {
+      const awb = selectedOrder.awbNumber || selectedOrder.trackingId || selectedOrder.awb;
+      if (awb) {
+        loadTracking(awb);
+      } else {
+        setTrackingInfo(null);
+        setTrackingError(null);
+      }
+    } else {
+      setTrackingInfo(null);
+      setTrackingError(null);
+    }
+  }, [selectedOrder]);
+
+  const loadTracking = async (awb) => {
+    setIsLoadingTracking(true);
+    setTrackingError(null);
+    setTrackingInfo(null);
+    try {
+      const data = await fetchTrackingDetails(awb);
+      setTrackingInfo(data);
+      if (data.statusUpdated && data.newStatus) {
+        const freshOrders = await fetchAllOrders();
+        setOrders(freshOrders);
+        setSelectedOrder(prev => prev ? { ...prev, status: data.newStatus } : null);
+        showToast(`Order status auto-updated to: ${data.newStatus}`);
+      }
+    } catch (err) {
+      setTrackingError(err.message || 'Failed to fetch live tracking details');
+    } finally {
+      setIsLoadingTracking(false);
+    }
+  };
 
   useEffect(() => {
     loadOrders();
@@ -21,6 +60,20 @@ export default function OrdersManager({ showToast }) {
     const data = await fetchAllOrders();
     setOrders(data);
     setLoading(false);
+  };
+
+  const handleSyncStatuses = async () => {
+    setIsSyncing(true);
+    showToast('Syncing orders with DTDC live registry...');
+    try {
+      const res = await syncOrderStatuses();
+      showToast(`Sync complete! Synced ${res.synced_count} orders.`);
+      loadOrders();
+    } catch (err) {
+      showToast(err.message || 'Failed to sync statuses with DTDC', 'error');
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   const handleUpdateStatus = async (orderId, newStatus, currentTrackingId = '') => {
@@ -172,8 +225,36 @@ export default function OrdersManager({ showToast }) {
              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Partner:</span>
              <strong style={{ color: 'var(--primary)', fontSize: '0.9rem' }}>DTDC</strong>
           </div>
-          <button className="btn btn-ghost" onClick={loadOrders}>
+          <button className="btn btn-ghost" onClick={loadOrders} disabled={loading || isSyncing}>
             Refresh
+          </button>
+          <button 
+            className="btn btn-primary" 
+            onClick={handleSyncStatuses} 
+            disabled={loading || isSyncing}
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: 8,
+              background: 'linear-gradient(135deg, var(--primary) 0%, #a21caf 100%)',
+              color: 'white',
+              border: 'none',
+              padding: '10px 18px',
+              borderRadius: '10px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              boxShadow: '0 4px 12px rgba(217, 70, 239, 0.25)',
+              transition: 'all 0.3s ease'
+            }}
+          >
+            {isSyncing ? (
+              <>
+                <svg style={{ animation: 'spin 1s linear infinite', width: 14, height: 14 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 100 16v-4l-3 3 3 3v-4a8 8 0 01-8-8z" />
+                </svg>
+                Syncing...
+              </>
+            ) : 'Sync DTDC Statuses'}
           </button>
         </div>
       </div>
@@ -369,14 +450,58 @@ export default function OrdersManager({ showToast }) {
                         </a>
                         
                         <button 
-                          className="btn btn-primary btn-small" 
-                          style={{ width: '100%', justifyContent: 'center', background: 'var(--primary)', color: 'white' }}
+                          className="btn btn-primary" 
+                          style={{ width: '100%', justifyContent: 'center', background: 'var(--primary)', color: 'white', padding: '14px', borderRadius: '12px' }}
                           onClick={() => handleDownloadLabel(displayAwb)}
                           disabled={isGeneratingLabel}
                         >
                           {isGeneratingLabel ? 'Generating Label...' : 'Download Shipping Label'}
                         </button>
                       </div>
+
+                      {/* Live Tracking Timeline */}
+                      {(isLoadingTracking || trackingError || trackingInfo) && (
+                        <div style={{ marginTop: 24, borderTop: '1px dashed rgba(255,255,255,0.08)', paddingTop: 20 }}>
+                          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 12, fontWeight: 600, letterSpacing: '0.05em' }}>LIVE SHIPMENT TRACKING</p>
+                          {isLoadingTracking && <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Connecting to DTDC Registry...</p>}
+                          {trackingError && <p style={{ fontSize: '0.8rem', color: 'var(--danger)', background: 'rgba(239,68,68,0.1)', padding: 10, borderRadius: 8 }}>{trackingError}</p>}
+                          {trackingInfo && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Status:</span>
+                                <span className="category-badge" style={{ background: 'rgba(13,148,136,0.1)', color: '#0d9488', fontSize: '0.75rem', padding: '4px 10px' }}>
+                                  {trackingInfo.status}
+                                </span>
+                              </div>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxHeight: '200px', overflowY: 'auto', paddingRight: 4, marginTop: 6 }} className="custom-scrollbar">
+                                {trackingInfo.history?.length === 0 ? (
+                                  <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>No logs registered yet.</p>
+                                ) : (
+                                  trackingInfo.history.map((event, index) => (
+                                    <div key={index} style={{ display: 'flex', gap: 12, position: 'relative' }}>
+                                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 10 }}>
+                                        <div style={{ width: 8, height: 8, borderRadius: '50%', background: index === 0 ? 'var(--primary)' : 'rgba(255,255,255,0.15)', flexShrink: 0, marginTop: 4 }}></div>
+                                        {index < trackingInfo.history.length - 1 && (
+                                          <div style={{ width: 1, flex: 1, background: 'rgba(255,255,255,0.1)', minHeight: 18 }}></div>
+                                        )}
+                                      </div>
+                                      <div style={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1 }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
+                                          <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)' }}>{event.status}</span>
+                                          <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{event.time}</span>
+                                        </div>
+                                        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                                          {event.location} {event.remarks && `— ${event.remarks}`}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  ))
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   );
                 })()}
