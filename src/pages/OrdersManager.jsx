@@ -124,7 +124,7 @@ export default function OrdersManager({ showToast }) {
   };
 
   const getDTDCTrackingUrl = (id) => {
-    return `https://www.dtdc.in/tracking/tracking_results.asp?SearchType=T&TType=A&consignmentNo=${id}`;
+    return `https://www.dtdc.com/tracking/${id}`;
   };
 
   const filteredOrders = orders.filter(order => 
