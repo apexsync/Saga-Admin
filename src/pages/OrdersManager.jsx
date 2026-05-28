@@ -112,6 +112,7 @@ export default function OrdersManager({ showToast }) {
       case 'Processing': return '#a8a29e'; // Stone
       case 'Confirmed': return '#0ea5e9'; // Sky
       case 'Packed': return '#8b5cf6'; // Violet
+      case 'Ready to Ship': return '#0d9488'; // Teal
       case 'Shipped': return '#3b82f6'; // Blue
       case 'Out for Delivery': return '#f59e0b'; // Amber
       case 'Delivered': return 'var(--success)'; // Green
@@ -392,30 +393,7 @@ export default function OrdersManager({ showToast }) {
               <span className="section-label">Update Status</span>
               
               {selectedOrder.status === 'Processing' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                  {selectedOrder.paymentId && (
-                    <label className="flex items-center gap-3 cursor-pointer p-3 bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 transition-colors">
-                      <input 
-                        type="checkbox" 
-                        checked={shouldRefund} 
-                        onChange={(e) => setShouldRefund(e.target.checked)}
-                        className="w-4 h-4 rounded border-white/20 bg-transparent text-primary focus:ring-primary"
-                      />
-                      <div className="flex flex-col">
-                        <span className="text-sm font-medium text-white">Issue Full Refund via Razorpay</span>
-                        <span className="text-[10px] text-white/40">Money will be returned to original payment method</span>
-                      </div>
-                    </label>
-                  )}
-                  <div style={{ display: 'flex', gap: 12 }}>
-                    <button className="btn btn-primary" style={{ flex: 1, padding: '14px' }} onClick={() => handleUpdateStatus(selectedOrder.id, 'Confirmed')}>Confirm Order</button>
-                    <button className="btn btn-danger" style={{ padding: '14px' }} onClick={() => {
-                       handleUpdateStatus(selectedOrder.id, 'Cancelled');
-                    }}>
-                      {shouldRefund ? 'Cancel & Refund' : 'Cancel Order'}
-                    </button>
-                  </div>
-                </div>
+                <button className="btn btn-primary" style={{ width: '100%', padding: '14px' }} onClick={() => handleUpdateStatus(selectedOrder.id, 'Confirmed')}>Confirm Order</button>
               )}
 
               {selectedOrder.status === 'Confirmed' && (
@@ -474,8 +452,39 @@ export default function OrdersManager({ showToast }) {
                 </div>
               )}
 
-              {selectedOrder.status === 'Shipped' && (
-                <button className="btn btn-primary" style={{ width: '100%', padding: '14px' }} onClick={() => handleUpdateStatus(selectedOrder.id, 'Out for Delivery')}>Mark Out for Delivery</button>
+              {['Processing', 'Confirmed', 'Packed'].includes(selectedOrder.status) && (
+                <div style={{ marginTop: 24, borderTop: '1px dashed rgba(255,255,255,0.08)', paddingTop: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  {selectedOrder.paymentId && (
+                    <label className="flex items-center gap-3 cursor-pointer p-3 bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 transition-colors">
+                      <input 
+                        type="checkbox" 
+                        checked={shouldRefund} 
+                        onChange={(e) => setShouldRefund(e.target.checked)}
+                        className="w-4 h-4 rounded border-white/20 bg-transparent text-primary focus:ring-primary"
+                      />
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium text-white">Issue Full Refund via Razorpay</span>
+                        <span className="text-[10px] text-white/40">Money will be returned to original payment method</span>
+                      </div>
+                    </label>
+                  )}
+                  <button className="btn btn-danger" style={{ width: '100%', padding: '14px' }} onClick={() => handleUpdateStatus(selectedOrder.id, 'Cancelled')}>
+                    {shouldRefund ? 'Cancel & Refund' : 'Cancel Order'}
+                  </button>
+                </div>
+              )}
+
+              {(selectedOrder.status === 'Ready to Ship' || selectedOrder.status === 'Shipped') && (
+                <button 
+                  className="btn btn-primary" 
+                  style={{ width: '100%', padding: '14px' }} 
+                  onClick={() => handleUpdateStatus(
+                    selectedOrder.id, 
+                    selectedOrder.status === 'Ready to Ship' ? 'Shipped' : 'Out for Delivery'
+                  )}
+                >
+                  {selectedOrder.status === 'Ready to Ship' ? 'Mark as Shipped' : 'Mark Out for Delivery'}
+                </button>
               )}
 
               {selectedOrder.status === 'Out for Delivery' && (
