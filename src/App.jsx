@@ -6,6 +6,7 @@ import AddProduct from './pages/AddProduct';
 import Login from './pages/Login';
 import ReviewsManager from './pages/ReviewsManager';
 import OrdersManager from './pages/OrdersManager';
+import CouponsManager from './pages/CouponsManager';
 import StoreConfig from './pages/StoreConfig';
 import './App.css';
 
@@ -17,6 +18,27 @@ function App() {
   const [editProduct, setEditProduct] = useState(null);
   const [toast, setToast] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isAppearanceUnlocked, setIsAppearanceUnlocked] = useState(false);
+  const [pinInput, setPinInput] = useState('');
+  const [lockError, setLockError] = useState('');
+
+  const handlePinPress = (val) => {
+    setLockError('');
+    const newPin = pinInput + val;
+    if (newPin.length <= 4) {
+      setPinInput(newPin);
+      if (newPin.length === 4) {
+        if (newPin === '1234') {
+          setIsAppearanceUnlocked(true);
+          setPinInput('');
+          showToast('Access granted');
+        } else {
+          setLockError('Incorrect passcode. Access denied.');
+          setPinInput('');
+        }
+      }
+    }
+  };
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
@@ -35,6 +57,7 @@ function App() {
     try {
       await signOut(auth);
       setCurrentPage('dashboard');
+      setIsAppearanceUnlocked(false);
       setSidebarOpen(false);
     } catch (err) {
       showToast('Error logging out', 'error');
@@ -138,6 +161,15 @@ function App() {
             Orders
           </button>
           <button
+            className={`sidebar-link ${currentPage === 'coupons' ? 'active' : ''}`}
+            onClick={() => navigateTo('coupons')}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-12h12c1.38 0 2.5 1.12 2.5 2.5v7c0 1.38-1.12 2.5-2.5 2.5h-12A2.5 2.5 0 0 1 5 15.5v-7A2.5 2.5 0 0 1 7.5 6Z" />
+            </svg>
+            Discord Coupons
+          </button>
+          <button
             className={`sidebar-link ${currentPage === 'appearance' ? 'active' : ''}`}
             onClick={() => navigateTo('appearance')}
           >
@@ -179,8 +211,194 @@ function App() {
         {currentPage === 'orders' && (
           <OrdersManager showToast={showToast} />
         )}
-        {currentPage === 'appearance' && (
+        {currentPage === 'coupons' && (
+          <CouponsManager showToast={showToast} />
+        )}
+        {currentPage === 'appearance' && isAppearanceUnlocked && (
           <StoreConfig showToast={showToast} />
+        )}
+        {currentPage === 'appearance' && !isAppearanceUnlocked && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: '80vh',
+            padding: '20px'
+          }}>
+            <div className="stat-card" style={{
+              maxWidth: '400px',
+              width: '100%',
+              padding: '40px 32px',
+              textAlign: 'center',
+              background: 'rgba(255, 255, 255, 0.03)',
+              backdropFilter: 'blur(20px)',
+              WebkitBackdropFilter: 'blur(20px)',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              borderRadius: '24px',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center'
+            }}>
+              {/* Lock Icon */}
+              <div style={{
+                width: '64px',
+                height: '64px',
+                borderRadius: '50%',
+                background: 'rgba(236, 72, 153, 0.1)',
+                color: 'var(--primary)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: '24px',
+                border: '1px solid rgba(236, 72, 153, 0.2)'
+              }}>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 28, height: 28 }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+                </svg>
+              </div>
+
+              <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '8px', color: 'var(--text-primary)' }}>Access Locked</h2>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '28px', lineHeight: 1.5 }}>
+                Administrator verification is required to edit the store appearance settings.
+              </p>
+
+              {/* PIN indicators */}
+              <div style={{
+                display: 'flex',
+                gap: '16px',
+                marginBottom: '28px',
+                justifyContent: 'center'
+              }}>
+                {[1, 2, 3, 4].map((dotIndex) => (
+                  <div 
+                    key={dotIndex} 
+                    style={{
+                      width: '14px',
+                      height: '14px',
+                      borderRadius: '50%',
+                      background: pinInput.length >= dotIndex ? 'var(--primary)' : 'rgba(255,255,255,0.1)',
+                      border: pinInput.length >= dotIndex ? 'none' : '1px solid rgba(255,255,255,0.2)',
+                      boxShadow: pinInput.length >= dotIndex ? '0 0 8px var(--primary)' : 'none',
+                      transition: 'all 0.2s ease'
+                    }}
+                  />
+                ))}
+              </div>
+
+              {lockError && (
+                <p style={{
+                  color: 'var(--danger)',
+                  fontSize: '0.8rem',
+                  background: 'rgba(239, 68, 68, 0.1)',
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  width: '100%',
+                  marginBottom: '20px',
+                  border: '1px solid rgba(239, 68, 68, 0.2)'
+                }}>
+                  {lockError}
+                </p>
+              )}
+
+              {/* Keypad */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(3, 1fr)',
+                gap: '16px',
+                width: '100%',
+                maxWidth: '280px',
+                marginBottom: '12px'
+              }}>
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
+                  <button
+                    key={num}
+                    onClick={() => handlePinPress(num.toString())}
+                    style={{
+                      height: '56px',
+                      borderRadius: '16px',
+                      background: 'rgba(255,255,255,0.03)',
+                      border: '1px solid rgba(255,255,255,0.05)',
+                      color: 'var(--text-primary)',
+                      fontSize: '1.25rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
+                      e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
+                      e.currentTarget.style.borderColor = 'rgba(255,255,255,0.05)';
+                    }}
+                  >
+                    {num}
+                  </button>
+                ))}
+                <button
+                  onClick={() => setPinInput('')}
+                  style={{
+                    height: '56px',
+                    borderRadius: '16px',
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'var(--text-muted)',
+                    fontSize: '0.85rem',
+                    fontWeight: 600,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Clear
+                </button>
+                <button
+                  onClick={() => handlePinPress('0')}
+                  style={{
+                    height: '56px',
+                    borderRadius: '16px',
+                    background: 'rgba(255,255,255,0.03)',
+                    border: '1px solid rgba(255,255,255,0.05)',
+                    color: 'var(--text-primary)',
+                    fontSize: '1.25rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
+                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
+                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.05)';
+                  }}
+                >
+                  0
+                </button>
+                <button
+                  onClick={() => navigateTo('dashboard')}
+                  style={{
+                    height: '56px',
+                    borderRadius: '16px',
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'var(--text-muted)',
+                    fontSize: '0.85rem',
+                    fontWeight: 600,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
         )}
       </main>
 

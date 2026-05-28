@@ -10,6 +10,7 @@ import {
   doc,
   getDocs,
   updateDoc,
+  deleteDoc,
   query,
   orderBy,
 } from 'firebase/firestore';
@@ -259,5 +260,37 @@ export async function syncOrderStatuses() {
   } catch (error) {
     console.error("Error triggering status sync:", error);
     throw error;
+  }
+}
+
+/**
+ * Delete order from Firestore.
+ * @param {string} orderId
+ */
+export async function deleteOrder(orderId) {
+  try {
+    const response = await fetch(`${BACKEND_URL}/delete-order`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ orderId }),
+    });
+
+    if (!response.ok) {
+        const result = await response.json();
+        throw new Error(result.error || 'Failed to delete order');
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Error deleting order via backend, falling back to direct Firestore:", error);
+    try {
+        const docRef = doc(db, ORDERS_COLLECTION, orderId);
+        await deleteDoc(docRef);
+        return true;
+    } catch (e) {
+        throw error;
+    }
   }
 }
