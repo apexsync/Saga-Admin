@@ -124,7 +124,7 @@ export default function OrdersManager({ showToast }) {
   };
 
   const getDTDCTrackingUrl = (id) => {
-    return `https://www.dtdc.com/tracking/${id}`;
+    return `https://www.aftership.com/track/dtdc/${id}`;
   };
 
   const filteredOrders = orders.filter(order => 
