@@ -7,6 +7,7 @@ export default function OrdersManager({ showToast }) {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [trackingId, setTrackingId] = useState('');
   const [updating, setUpdating] = useState(false);
+  const [orderToDelete, setOrderToDelete] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isGeneratingLabel, setIsGeneratingLabel] = useState(false);
   const [shouldRefund, setShouldRefund] = useState(false);
@@ -76,22 +77,8 @@ export default function OrdersManager({ showToast }) {
     }
   };
 
-  const handleDeleteOrder = async (orderId) => {
-    if (!window.confirm("WARNING: Are you sure you want to permanently delete this order? This will remove all records of this order from the system. This action cannot be undone.")) {
-      return;
-    }
-    
-    setUpdating(true);
-    try {
-      await deleteOrder(orderId);
-      showToast('Order deleted successfully');
-      setSelectedOrder(null);
-      loadOrders();
-    } catch (err) {
-      showToast(err.message || 'Failed to delete order', 'error');
-    } finally {
-      setUpdating(false);
-    }
+  const handleDeleteOrder = (orderId) => {
+    setOrderToDelete(orderId);
   };
 
   const handleUpdateStatus = async (orderId, newStatus, currentTrackingId = '') => {
@@ -667,6 +654,39 @@ export default function OrdersManager({ showToast }) {
                   Delete Order Record
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Delete Order Confirmation Modal */}
+      {orderToDelete && (
+        <div className="modal-overlay" onClick={() => setOrderToDelete(null)}>
+          <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 450, textAlign: 'center' }}>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: 48, height: 48, color: 'var(--danger)', margin: '0 auto 16px' }}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+            </svg>
+            <h3 style={{ marginBottom: 8 }}>Permanently Delete Order?</h3>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: 24, lineHeight: 1.6 }}>
+              WARNING: Are you sure you want to permanently delete this order? This will remove all records of this order from the system. This action cannot be undone.
+            </p>
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+              <button className="btn btn-ghost" onClick={() => setOrderToDelete(null)}>Cancel</button>
+              <button className="btn btn-danger" onClick={async () => {
+                setUpdating(true);
+                try {
+                  await deleteOrder(orderToDelete);
+                  showToast('Order deleted successfully');
+                  setSelectedOrder(null);
+                  loadOrders();
+                } catch (err) {
+                  showToast(err.message || 'Failed to delete order', 'error');
+                } finally {
+                  setUpdating(false);
+                  setOrderToDelete(null);
+                }
+              }}>
+                Delete Order
+              </button>
             </div>
           </div>
         </div>

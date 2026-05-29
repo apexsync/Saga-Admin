@@ -6,6 +6,7 @@ export default function Dashboard({ onEdit, onAddNew, showToast }) {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [reviewToDelete, setReviewToDelete] = useState(null);
   
   // Review states
   const [viewingReviewsFor, setViewingReviewsFor] = useState(null);
@@ -68,15 +69,8 @@ export default function Dashboard({ onEdit, onAddNew, showToast }) {
     }
   };
 
-  const handleDeleteReview = async (reviewId) => {
-    if (!window.confirm('Delete this review?')) return;
-    try {
-      await deleteReview(reviewId);
-      setProductReviews(productReviews.filter(r => r.id !== reviewId));
-      showToast('Review deleted');
-    } catch (err) {
-      showToast('Failed to delete review', 'error');
-    }
+  const handleDeleteReview = (reviewId) => {
+    setReviewToDelete(reviewId);
   };
 
   const categories = [...new Set(products.map(p => p.category))];
@@ -409,7 +403,7 @@ export default function Dashboard({ onEdit, onAddNew, showToast }) {
           </div>
       )}
 
-      {/* Delete Confirmation Modal */}
+      {/* Delete Product Confirmation Modal */}
       {deleteConfirm && (
         <div className="modal-overlay" onClick={() => setDeleteConfirm(null)}>
           <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 400, textAlign: 'center' }}>
@@ -423,6 +417,37 @@ export default function Dashboard({ onEdit, onAddNew, showToast }) {
             <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
               <button className="btn btn-ghost" onClick={() => setDeleteConfirm(null)}>Cancel</button>
               <button className="btn btn-danger" onClick={() => handleDelete(deleteConfirm)}>
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Review Confirmation Modal */}
+      {reviewToDelete && (
+        <div className="modal-overlay" onClick={() => setReviewToDelete(null)}>
+          <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 400, textAlign: 'center' }}>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: 48, height: 48, color: 'var(--danger)', margin: '0 auto 16px' }}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+            </svg>
+            <h3 style={{ marginBottom: 8 }}>Delete Review?</h3>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: 24 }}>
+              Are you sure you want to permanently delete this review? This action cannot be undone.
+            </p>
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+              <button className="btn btn-ghost" onClick={() => setReviewToDelete(null)}>Cancel</button>
+              <button className="btn btn-danger" onClick={async () => {
+                try {
+                  await deleteReview(reviewToDelete);
+                  setProductReviews(productReviews.filter(r => r.id !== reviewToDelete));
+                  showToast('Review deleted');
+                } catch (err) {
+                  showToast('Failed to delete review', 'error');
+                } finally {
+                  setReviewToDelete(null);
+                }
+              }}>
                 Delete
               </button>
             </div>

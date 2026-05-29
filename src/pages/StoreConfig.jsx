@@ -44,6 +44,7 @@ export default function StoreConfig() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState({ type: '', text: '' });
+    const [revertConfirm, setRevertConfirm] = useState(false);
 
     useEffect(() => {
         const loadConfig = async () => {
@@ -68,10 +69,7 @@ export default function StoreConfig() {
     }, []);
 
     const handleRevert = () => {
-        if (window.confirm('This will reset all images and text to the original store defaults. Continue?')) {
-            setConfig(DEFAULT_CONFIG);
-            setMessage({ type: 'warning', text: 'Reset to defaults. Don\'t forget to click Publish to save.' });
-        }
+        setRevertConfirm(true);
     };
 
     const handleSave = async (section = 'all') => {
@@ -408,6 +406,31 @@ export default function StoreConfig() {
                     </div>
                 </section>
             </div>
+
+            {/* Revert Confirmation Modal */}
+            {revertConfirm && (
+                <div className="modal-overlay" onClick={() => setRevertConfirm(false)}>
+                    <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 400, textAlign: 'center' }}>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: 48, height: 48, color: 'var(--danger)', margin: '0 auto 16px' }}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                        </svg>
+                        <h3 style={{ marginBottom: 8 }}>Reset Store Appearance?</h3>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: 24, lineHeight: 1.6 }}>
+                            This will reset all images and text to the original store defaults. Continue?
+                        </p>
+                        <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+                            <button className="btn btn-ghost" onClick={() => setRevertConfirm(false)}>Cancel</button>
+                            <button className="btn btn-danger" onClick={() => {
+                                setConfig(DEFAULT_CONFIG);
+                                setMessage({ type: 'warning', text: 'Reset to defaults. Don\'t forget to click Publish to save.' });
+                                setRevertConfirm(false);
+                            }}>
+                                Reset Defaults
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
