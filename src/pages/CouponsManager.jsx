@@ -118,7 +118,7 @@ export default function CouponsManager({ showToast }) {
     <>
       <div className="page-header">
         <div>
-          <h1 className="page-title">Discord Coupons</h1>
+          <h1 className="page-title">Discount Coupons</h1>
           <p className="page-subtitle">Manage promotional coupon codes for your customers</p>
         </div>
         <div style={{ display: 'flex', gap: 12 }}>
@@ -232,7 +232,7 @@ export default function CouponsManager({ showToast }) {
         <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
           <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 500 }}>
             <div className="modal-header">
-              <h2 className="modal-title">Create Discord Coupon</h2>
+              <h2 className="modal-title">Create Discount Coupon</h2>
               <button className="modal-close" onClick={() => setShowCreateModal(false)}>
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: 24, height: 24 }}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -242,7 +242,7 @@ export default function CouponsManager({ showToast }) {
 
             <form onSubmit={handleCreateCouponSubmit}>
               <div className="form-group">
-                <label className="form-label">Coupon Code (Uppercase, e.g. DISCORD15)</label>
+                <label className="form-label">Coupon Code (Uppercase, e.g. DISCOUNT15)</label>
                 <input
                   type="text"
                   name="code"
