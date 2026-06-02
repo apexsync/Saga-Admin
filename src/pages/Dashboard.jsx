@@ -1,13 +1,20 @@
 import { useState, useEffect } from 'react';
 import { fetchAllProducts, deleteProduct } from '../services/products';
 import { fetchReviewsByProductId, respondToReview, deleteReview } from '../services/reviews';
+import { fetchAllOrders } from '../services/orders';
 
 export default function Dashboard({ onEdit, onAddNew, showToast }) {
   const [products, setProducts] = useState([]);
+  const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [reviewToDelete, setReviewToDelete] = useState(null);
   
+  // Filter states
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [lowStockOnly, setLowStockOnly] = useState(false);
+
   // Review states
   const [viewingReviewsFor, setViewingReviewsFor] = useState(null);
   const [productReviews, setProductReviews] = useState([]);
@@ -19,15 +26,25 @@ export default function Dashboard({ onEdit, onAddNew, showToast }) {
   // Product Detail states
   const [viewingProduct, setViewingProduct] = useState(null);
 
-  const loadProducts = async () => {
+  const loadDashboardData = async () => {
     setLoading(true);
-    const data = await fetchAllProducts();
-    setProducts(data);
-    setLoading(false);
+    try {
+      const [productsData, ordersData] = await Promise.all([
+        fetchAllProducts(),
+        fetchAllOrders()
+      ]);
+      setProducts(productsData);
+      setOrders(ordersData);
+    } catch (err) {
+      console.error("Dashboard loading error:", err);
+      showToast("Error loading dashboard data", "error");
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    loadProducts();
+    loadDashboardData();
   }, []);
 
   const handleDelete = async (productId) => {
@@ -74,6 +91,33 @@ export default function Dashboard({ onEdit, onAddNew, showToast }) {
   };
 
   const categories = [...new Set(products.map(p => p.category))];
+
+  // Sales Analytics calculations
+  const paidOrders = orders.filter(o => o.status !== 'Pending' && o.status !== 'Cancelled');
+  const totalRevenue = paidOrders.reduce((sum, o) => sum + Number(o.total || 0), 0);
+  
+  const activeOrdersCount = orders.filter(o => 
+    ['Processing', 'Confirmed', 'Packed', 'Ready to Ship', 'Shipped', 'Out for Delivery'].includes(o.status)
+  ).length;
+  
+  const totalOrdersCount = orders.length;
+  const paidOrdersCount = orders.filter(o => o.status !== 'Pending').length;
+  const conversionRate = totalOrdersCount > 0 
+    ? ((paidOrdersCount / totalOrdersCount) * 100).toFixed(1) 
+    : '0.0';
+
+  // Apply filters
+  const filteredProducts = products.filter(product => {
+    const matchesSearch = !searchQuery || 
+      product.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      product.category?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      product.material?.toLowerCase().includes(searchQuery.toLowerCase());
+      
+    const matchesCategory = selectedCategory === 'All' || product.category === selectedCategory;
+    const matchesLowStock = !lowStockOnly || (product.stock || 0) < 5;
+    
+    return matchesSearch && matchesCategory && matchesLowStock;
+  });
 
   return (
     <>
@@ -130,13 +174,50 @@ export default function Dashboard({ onEdit, onAddNew, showToast }) {
             <div className="stat-label">Total Inventory Value</div>
           </div>
         </div>
+
+        <div className="stat-card">
+          <div className="stat-icon green">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+            </svg>
+          </div>
+          <div>
+            <div className="stat-value">₹{totalRevenue.toLocaleString('en-IN')}</div>
+            <div className="stat-label">Total Revenue</div>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="stat-icon blue">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 1 0-7.5 0v4.5m11.356-1.993 1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 0 1-1.12-1.243l1.264-12A1.125 1.125 0 0 1 5.513 7.5h12.974c.576 0 1.059.435 1.119 1.007ZM8.625 10.5a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm7.5 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
+            </svg>
+          </div>
+          <div>
+            <div className="stat-value">{activeOrdersCount}</div>
+            <div className="stat-label">Active Orders</div>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="stat-icon orange">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6a7.5 7.5 0 1 0 7.5 7.5h-7.5V6Z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 10.5H21A7.5 7.5 0 0 0 13.5 3v7.5Z" />
+            </svg>
+          </div>
+          <div>
+            <div className="stat-value">{conversionRate}%</div>
+            <div className="stat-label">Checkout Conversion</div>
+          </div>
+        </div>
       </div>
 
       {/* Product Table */}
       <div className="table-container">
         <div className="table-header">
           <span className="table-title">All Products</span>
-          <button className="btn btn-ghost btn-small" onClick={loadProducts}>
+          <button className="btn btn-ghost btn-small" onClick={loadDashboardData}>
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: 16, height: 16 }}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182" />
             </svg>
@@ -144,17 +225,59 @@ export default function Dashboard({ onEdit, onAddNew, showToast }) {
           </button>
         </div>
 
+        {/* Dynamic Filters Bar */}
+        <div style={{ 
+          display: 'flex', 
+          flexWrap: 'wrap', 
+          gap: 16, 
+          padding: '16px 24px', 
+          borderBottom: '1px solid var(--border)',
+          background: 'rgba(255,255,255,0.01)',
+          alignItems: 'center'
+        }}>
+          <input 
+            type="text" 
+            placeholder="Search product name, category, or material..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="form-input"
+            style={{ flex: 1, minWidth: '200px', marginBottom: 0, padding: '8px 12px', fontSize: '0.85rem' }}
+          />
+          
+          <select
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            className="form-select"
+            style={{ minWidth: '150px', marginBottom: 0, padding: '8px 12px', fontSize: '0.85rem' }}
+          >
+            <option value="All">All Categories</option>
+            {categories.map(cat => (
+              <option key={cat} value={cat}>{cat}</option>
+            ))}
+          </select>
+          
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.85rem', cursor: 'pointer', userSelect: 'none' }}>
+            <input 
+              type="checkbox" 
+              checked={lowStockOnly} 
+              onChange={(e) => setLowStockOnly(e.target.checked)}
+              style={{ width: 16, height: 16, cursor: 'pointer' }}
+            />
+            <span style={{ color: lowStockOnly ? 'var(--warning)' : 'var(--text-secondary)', fontWeight: lowStockOnly ? 600 : 400 }}>Low Stock (&lt; 5)</span>
+          </label>
+        </div>
+
         {loading ? (
           <div className="empty-state">
             <p>Loading products...</p>
           </div>
-        ) : products.length === 0 ? (
+        ) : filteredProducts.length === 0 ? (
           <div className="empty-state">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5m8.25 3v6.75m0 0l-3-3m3 3l3-3M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
             </svg>
-            <h3>No products yet</h3>
-            <p>Click "Add Product" to create your first product.</p>
+            <h3>{products.length === 0 ? 'No products yet' : 'No matching products found'}</h3>
+            <p>{products.length === 0 ? 'Click "Add Product" to create your first product.' : 'Try adjusting your search filters.'}</p>
           </div>
         ) : (
           <table>
@@ -169,7 +292,7 @@ export default function Dashboard({ onEdit, onAddNew, showToast }) {
               </tr>
             </thead>
             <tbody>
-              {products.map(product => (
+              {filteredProducts.map(product => (
                 <tr key={product.id}>
                   <td data-label="Product">
                     <div className="product-cell">

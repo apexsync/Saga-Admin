@@ -1,6 +1,16 @@
 import { useState, useEffect } from 'react';
 import { fetchAllOrders, updateOrderStatus, generateShippingLabel, cancelConsignment, refundPayment, createConsignment, fetchTrackingDetails, syncOrderStatuses, deleteOrder } from '../services/orders';
 
+const getStoreProductUrl = (productId) => {
+  const hostname = window.location.hostname;
+  const protocol = window.location.protocol;
+  
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return `http://localhost:5173/product/${productId}`;
+  }
+  return `https://saga-jewelry.vercel.app/product/${productId}`;
+};
+
 export default function OrdersManager({ showToast }) {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -9,6 +19,7 @@ export default function OrdersManager({ showToast }) {
   const [updating, setUpdating] = useState(false);
   const [orderToDelete, setOrderToDelete] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState('paid'); // 'paid' or 'pending'
   const [isGeneratingLabel, setIsGeneratingLabel] = useState(false);
   const [shouldRefund, setShouldRefund] = useState(false);
   const [isBookingShipment, setIsBookingShipment] = useState(false);
@@ -165,6 +176,88 @@ export default function OrdersManager({ showToast }) {
     }
   };
 
+  const handleExportCSV = () => {
+    if (filteredOrders.length === 0) {
+      showToast('No orders to export', 'error');
+      return;
+    }
+    
+    const headers = [
+      'Order ID', 'Customer Name', 'Customer Email', 'Phone', 'Address Line 1', 
+      'Address Line 2', 'Landmark', 'City', 'State', 'Pincode', 
+      'Subtotal', 'Discount', 'Delivery Charge', 'Platform Fee', 'Total', 
+      'Status', 'Date', 'Payment ID', 'AWB Number', 'Items Ordered'
+    ];
+    
+    const rows = filteredOrders.map(order => {
+      const itemsStr = order.items?.map(item => `${item.name} (${item.quantity}x)`).join('; ') || '';
+      return [
+        order.id,
+        order.customerName || 'Customer',
+        order.customerEmail || '',
+        order.address?.phone || '',
+        `"${(order.address?.addressLine1 || '').replace(/"/g, '""')}"`,
+        `"${(order.address?.addressLine2 || '').replace(/"/g, '""')}"`,
+        `"${(order.address?.landmark || '').replace(/"/g, '""')}"`,
+        order.address?.city || '',
+        order.address?.state || '',
+        order.address?.pincode || '',
+        order.subtotal || 0,
+        order.discount || 0,
+        order.deliveryCharge || 0,
+        order.platformFee || 0,
+        order.total || 0,
+        order.status || 'Pending',
+        order.createdAt ? new Date(order.createdAt).toLocaleDateString() : '',
+        order.paymentId || '',
+        order.awbNumber || order.trackingId || '',
+        `"${itemsStr.replace(/"/g, '""')}"`
+      ];
+    });
+    
+    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `Saga_Orders_Export_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast('Orders exported successfully!');
+  };
+
+  const handleClearAbandoned = async () => {
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const abandonedOrders = orders.filter(o => 
+      o.status === 'Pending' && 
+      o.createdAt && 
+      new Date(o.createdAt) < twentyFourHoursAgo
+    );
+
+    if (abandonedOrders.length === 0) {
+      showToast('No abandoned sessions older than 24 hours found.');
+      return;
+    }
+
+    if (window.confirm(`Are you sure you want to delete ${abandonedOrders.length} unpaid checkouts older than 24 hours? This cannot be undone.`)) {
+      setUpdating(true);
+      showToast(`Clearing ${abandonedOrders.length} abandoned sessions...`);
+      let successCount = 0;
+      for (const order of abandonedOrders) {
+        try {
+          await deleteOrder(order.id);
+          successCount++;
+        } catch (err) {
+          console.error(`Failed to delete abandoned order ${order.id}:`, err);
+        }
+      }
+      showToast(`Successfully cleared ${successCount} abandoned sessions.`);
+      loadOrders();
+      setUpdating(false);
+    }
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'Processing': return '#a8a29e'; // Stone
@@ -185,11 +278,19 @@ export default function OrdersManager({ showToast }) {
     return `https://www.aftership.com/track/dtdc/${id}`;
   };
 
-  const filteredOrders = orders.filter(order => 
-    order.id.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    (order.customerName && order.customerName.toLowerCase().includes(searchQuery.toLowerCase())) ||
-    (order.address?.phone && order.address.phone.includes(searchQuery))
-  );
+  const filteredOrders = orders.filter(order => {
+    const matchesTab = activeTab === 'pending'
+      ? order.status === 'Pending'
+      : order.status !== 'Pending';
+      
+    if (!matchesTab) return false;
+
+    return (
+      order.id.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      (order.customerName && order.customerName.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (order.address?.phone && order.address.phone.includes(searchQuery))
+    );
+  });
 
   const getWhatsAppUrl = (order, type = 'general') => {
     const phone = order.address?.phone?.replace(/\D/g, '');
@@ -234,6 +335,30 @@ export default function OrdersManager({ showToast }) {
             Refresh
           </button>
           <button 
+            className="btn btn-ghost" 
+            onClick={handleExportCSV} 
+            disabled={loading}
+            style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: 16, height: 16 }}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+            </svg>
+            Export CSV
+          </button>
+          {activeTab === 'pending' && (
+            <button 
+              className="btn btn-danger" 
+              onClick={handleClearAbandoned} 
+              disabled={loading || updating}
+              style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: 16, height: 16 }}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+              </svg>
+              Clear Abandoned (&gt;24h)
+            </button>
+          )}
+          <button 
             className="btn btn-primary" 
             onClick={handleSyncStatuses} 
             disabled={loading || isSyncing}
@@ -262,6 +387,75 @@ export default function OrdersManager({ showToast }) {
             ) : 'Sync DTDC Statuses'}
           </button>
         </div>
+      </div>
+
+      {/* Tabs Selector */}
+      <div style={{ 
+        display: 'flex', 
+        gap: 8, 
+        marginBottom: 20, 
+        borderBottom: '1px solid var(--border)',
+        paddingBottom: 12
+      }}>
+        <button 
+          onClick={() => setActiveTab('paid')}
+          style={{
+            background: activeTab === 'paid' ? 'rgba(251, 112, 16, 0.12)' : 'transparent',
+            color: activeTab === 'paid' ? 'var(--primary)' : 'var(--text-secondary)',
+            border: activeTab === 'paid' ? '1px solid rgba(251, 112, 16, 0.3)' : '1px solid transparent',
+            padding: '10px 20px',
+            borderRadius: '10px',
+            fontSize: '0.9rem',
+            fontWeight: 600,
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8
+          }}
+        >
+          <span>Paid Orders</span>
+          <span style={{
+            background: activeTab === 'paid' ? 'var(--primary)' : 'var(--bg-input)',
+            color: activeTab === 'paid' ? 'white' : 'var(--text-muted)',
+            padding: '2px 8px',
+            borderRadius: '20px',
+            fontSize: '0.75rem',
+            fontWeight: 700
+          }}>
+            {orders.filter(o => o.status !== 'Pending').length}
+          </span>
+        </button>
+        
+        <button 
+          onClick={() => setActiveTab('pending')}
+          style={{
+            background: activeTab === 'pending' ? 'rgba(251, 112, 16, 0.12)' : 'transparent',
+            color: activeTab === 'pending' ? 'var(--primary)' : 'var(--text-secondary)',
+            border: activeTab === 'pending' ? '1px solid rgba(251, 112, 16, 0.3)' : '1px solid transparent',
+            padding: '10px 20px',
+            borderRadius: '10px',
+            fontSize: '0.9rem',
+            fontWeight: 600,
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8
+          }}
+        >
+          <span>Pending Payments</span>
+          <span style={{
+            background: activeTab === 'pending' ? 'var(--primary)' : 'var(--bg-input)',
+            color: activeTab === 'pending' ? 'white' : 'var(--text-muted)',
+            padding: '2px 8px',
+            borderRadius: '20px',
+            fontSize: '0.75rem',
+            fontWeight: 700
+          }}>
+            {orders.filter(o => o.status === 'Pending').length}
+          </span>
+        </button>
       </div>
 
       <div className="table-container">
@@ -301,7 +495,31 @@ export default function OrdersManager({ showToast }) {
                       <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{order.address?.phone || 'No phone'}</span>
                     </div>
                   </td>
-                  <td data-label="Items">{order.items?.length || 0} product(s)</td>
+                  <td data-label="Items">
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      {order.items?.map((item, idx) => (
+                        <a 
+                          key={idx} 
+                          href={getStoreProductUrl(item.id)} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          title={`View ${item.name || 'Product'} on Store`}
+                          style={{ 
+                            fontSize: '0.8rem', 
+                            color: 'var(--text-primary)', 
+                            textDecoration: 'none',
+                            display: 'inline-block',
+                            transition: 'color 0.2s',
+                            cursor: 'pointer'
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.color = 'var(--primary)'}
+                          onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-primary)'}
+                        >
+                          <span style={{ color: 'var(--primary)', fontWeight: 'bold' }}>{item.quantity}x</span> {item.name || 'Product'} ↗
+                        </a>
+                      )) || 'No items'}
+                    </div>
+                  </td>
                   <td data-label="Total" style={{ fontWeight: 600 }}>₹{Number(order.total).toLocaleString()}</td>
                   <td data-label="Status">
                     <span className="category-badge" style={{ 
@@ -513,6 +731,119 @@ export default function OrdersManager({ showToast }) {
               </div>
             </div>
 
+            {/* Ordered Items Section */}
+            <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: 24, marginBottom: 32 }}>
+              <span className="section-label" style={{ marginBottom: 12, display: 'block' }}>Ordered Items</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {selectedOrder.items?.map((item, idx) => {
+                  const getItemPrice = (price) => {
+                    if (typeof price === 'number') return price;
+                    if (!price) return 0;
+                    const clean = String(price).replace(/[^0-9.]/g, '');
+                    return parseFloat(clean) || 0;
+                  };
+                  const unitPrice = getItemPrice(item.price);
+                  const itemTotal = unitPrice * item.quantity;
+                  
+                  return (
+                    <a 
+                      key={idx} 
+                      href={getStoreProductUrl(item.id)} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      title={`View ${item.name || 'Product'} on Store`}
+                      style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'space-between',
+                        background: 'rgba(255,255,255,0.02)', 
+                        padding: '12px 16px', 
+                        borderRadius: '12px',
+                        border: '1px solid rgba(255,255,255,0.05)',
+                        gap: 12,
+                        textDecoration: 'none',
+                        color: 'inherit',
+                        transition: 'all 0.2s ease',
+                        cursor: 'pointer'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                        e.currentTarget.style.borderColor = 'var(--primary)';
+                        e.currentTarget.style.transform = 'translateY(-1px)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'rgba(255,255,255,0.02)';
+                        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.05)';
+                        e.currentTarget.style.transform = 'none';
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        {item.image ? (
+                          <img 
+                            src={item.image} 
+                            alt={item.name} 
+                            style={{ width: 44, height: 44, borderRadius: 8, objectFit: 'cover', background: 'var(--bg-input)', border: '1px solid var(--border)' }} 
+                          />
+                        ) : (
+                          <div style={{ width: 44, height: 44, borderRadius: 8, background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 600 }}>
+                            N/A
+                          </div>
+                        )}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                          <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{item.name || 'Product'}</span>
+                          <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>ID: {item.id}</span>
+                        </div>
+                      </div>
+                      <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                          {item.quantity} × {typeof item.price === 'string' && item.price.startsWith('₹') ? item.price : `₹${item.price}`}
+                        </span>
+                        <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--primary)' }}>
+                          ₹{itemTotal.toLocaleString('en-IN')}
+                        </span>
+                      </div>
+                    </a>
+                  );
+                }) || <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>No items in this order.</p>}
+              </div>
+              
+              {/* Financial Breakdown Summary */}
+              <div style={{ 
+                background: 'rgba(255,255,255,0.01)', 
+                padding: '16px', 
+                borderRadius: '12px', 
+                border: '1px dashed var(--border)', 
+                marginTop: 16,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 8,
+                fontSize: '0.85rem'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)' }}>
+                  <span>Subtotal:</span>
+                  <span>₹{Number(selectedOrder.subtotal || 0).toLocaleString('en-IN')}</span>
+                </div>
+                {selectedOrder.discount > 0 && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--success)' }}>
+                    <span>Discount {selectedOrder.couponCode ? `(${selectedOrder.couponCode})` : ''}:</span>
+                    <span>-₹{Number(selectedOrder.discount).toLocaleString('en-IN')}</span>
+                  </div>
+                )}
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)' }}>
+                  <span>Delivery Charge:</span>
+                  <span>₹{Number(selectedOrder.deliveryCharge || 0).toLocaleString('en-IN')}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)' }}>
+                  <span>Platform Fee:</span>
+                  <span>₹{Number(selectedOrder.platformFee || 0).toLocaleString('en-IN')}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-primary)', fontWeight: 700, fontSize: '0.95rem', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: 8, marginTop: 4 }}>
+                  <span>Grand Total:</span>
+                  <span style={{ color: 'var(--primary)' }}>₹{Number(selectedOrder.total || 0).toLocaleString('en-IN')}</span>
+                </div>
+              </div>
+            </div>
+
             <div style={{ 
               borderTop: '1px solid rgba(255,255,255,0.08)', 
               paddingTop: 32, 
@@ -521,6 +852,16 @@ export default function OrdersManager({ showToast }) {
               padding: '32px 36px'
             }}>
               <span className="section-label">Update Status</span>
+              
+              {selectedOrder.status === 'Pending' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <p style={{ fontSize: '0.8rem', color: '#f59e0b', background: 'rgba(245, 158, 11, 0.1)', padding: 12, borderRadius: 10, border: '1px solid rgba(245, 158, 11, 0.2)', marginBottom: 8, lineHeight: 1.5 }}>
+                    ⚠️ This order is unpaid. Only confirm if you have manually verified the customer's offline payment.
+                  </p>
+                  <button className="btn btn-primary" style={{ width: '100%', padding: '14px' }} onClick={() => handleUpdateStatus(selectedOrder.id, 'Confirmed')}>Force Confirm (Paid Offline)</button>
+                  <button className="btn btn-danger" style={{ width: '100%', padding: '14px' }} onClick={() => handleUpdateStatus(selectedOrder.id, 'Cancelled')}>Cancel Order</button>
+                </div>
+              )}
               
               {selectedOrder.status === 'Processing' && (
                 <button className="btn btn-primary" style={{ width: '100%', padding: '14px' }} onClick={() => handleUpdateStatus(selectedOrder.id, 'Confirmed')}>Confirm Order</button>
